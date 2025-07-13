@@ -32,11 +32,18 @@
             padding: 16px 20px;
             transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             position: relative;
-            overflow: visible;
             display: flex;
             flex-direction: column;
             border-right: 1px solid #e0e0e0;
             box-sizing: border-box;
+        }
+
+        .nav-panel {
+            overflow: hidden;
+        }
+
+        .account-panel {
+            overflow: visible;
         }
 
         .account-panel {
@@ -180,7 +187,7 @@
             display: flex;
             align-items: center;
             padding: 8px 12px;
-            margin: 2px 0;
+            margin: 0;
             cursor: pointer;
             border-radius: 6px;
             transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -209,12 +216,26 @@
         }
 
         .account-popover-item.selected {
-            background-color: #f0f4ff;
-            border: 1px solid #533AFD;
+            position: relative;
+            padding-right: 40px;
+            font-weight: 500;
+        }
+
+        .account-popover-item.selected::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23533AFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
         }
 
         .account-popover-item.selected:hover {
-            background-color: #e8f0ff;
+            background-color: #f8f9fa;
         }
 
         .account-popover-item .icon {
@@ -232,15 +253,31 @@
         }
         
         .account-popover-item.sandbox-item.selected {
-            background: rgba(83, 58, 253, 0.15);
+            position: relative;
+            padding-right: 40px;
+            font-weight: 500;
         }
-        
-        /* Exit Sandbox Button Styling */
 
+        .account-popover-item.sandbox-item.selected::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23533AFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .account-popover-item.sandbox-item.selected:hover {
+            background: rgba(83, 58, 253, 0.1);
+        }
         .account-popover-divider {
             height: 1px;
             background-color: #e0e0e0;
-            margin: 8px 0;
+            margin: 0;
             opacity: 0;
             transform: scaleX(0);
         }
@@ -298,7 +335,7 @@
             display: flex;
             align-items: center;
             padding: 8px 12px;
-            margin: 2px 0;
+            margin: 0;
             cursor: pointer;
             border-radius: 6px;
             transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -365,7 +402,7 @@
             display: flex;
             align-items: center;
             padding: 8px 12px;
-            margin: 2px 0;
+            margin: 0;
             cursor: pointer;
             border-radius: 6px;
             transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -398,7 +435,7 @@
         .sandbox-popover-divider {
             height: 1px;
             background-color: #e0e0e0;
-            margin: 8px 0;
+            margin: 0;
             opacity: 0;
             transform: scaleX(0);
         }
@@ -420,12 +457,27 @@
             width: 240px;
         }
 
+        .nav-panel.expanded {
+            overflow: visible;
+        }
+
         .nav-content {
             flex-grow: 1;
-            overflow: visible;
             position: relative;
             display: flex;
             flex-direction: column;
+        }
+
+        .nav-panel .nav-content {
+            overflow: hidden;
+        }
+
+        .nav-panel.expanded .nav-content {
+            overflow: visible;
+        }
+
+        .account-panel .nav-content {
+            overflow: visible;
         }
 
         /* Unified Navigation Component */
@@ -447,6 +499,8 @@
         .account-panel.expanded .nav-component {
             padding: 4px 8px 4px 2px;
         }
+
+
 
         /* Hover State */
         .nav-component:hover,
@@ -470,6 +524,10 @@
         .nav-panel .nav-component.active .icon,
         .nav-panel .nav-component.active .nav-text {
             color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .nav-text {
+            font-weight: 500;
         }
 
         .nav-panel .nav-component.active .placeholder-circle {
@@ -632,7 +690,83 @@
             opacity: 1;
         }
 
+        /* Account switcher text truncation */
+        #accountSwitcherText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 120px; /* Limit width when panel is closed */
+        }
 
+        /* When panel is expanded, allow full width */
+        .nav-panel.expanded #accountSwitcherText {
+            max-width: none;
+        }
+
+        /* Sandbox Mode Indicator Bar */
+        .sandbox-indicator-bar {
+            position: fixed;
+            top: 0;
+            left: 65px;  /* Start after collapsed account panel, extend over nav panel */
+            width: calc(100% - 65px);  /* Extend over nav panel and main content */
+            height: 32px;
+            background-color: #0E3359;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1), width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        /* Adjust bar position when account panel is expanded */
+        .dashboard.sandbox-mode.account-panel-expanded .sandbox-indicator-bar {
+            left: 240px;  /* Start after expanded account panel, extend over nav panel and main content */
+            width: calc(100% - 240px);  /* Extend over nav panel and main content */
+        }
+
+        /* Adjust nav panel and main content top margin when sandbox bar is visible */
+        .dashboard.sandbox-mode .nav-panel,
+        .dashboard.sandbox-mode .main-content {
+            margin-top: 32px;
+        }
+
+        /* Remove general dashboard padding and apply specific spacing */
+        .dashboard.sandbox-mode {
+            padding-top: 0;
+        }
+
+        .sandbox-indicator-bar .exit-link {
+            position: absolute;
+            left: 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .sandbox-indicator-bar .exit-link .icon {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .sandbox-indicator-bar .exit-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .sandbox-indicator-bar .exit-link .icon .genericIcon svg {
+            stroke: white;
+        }
 
         /* Navigation Divider */
         .nav-divider {
@@ -705,8 +839,8 @@
 
 
         .nav-component .dropdown-icon {
-            width: 24px;
-            height: 24px;
+            width: 16px;
+            height: 16px;
             color: #666;
             flex-shrink: 0;
             margin-left: auto;
@@ -719,8 +853,8 @@
         }
 
         .nav-component .dropdown-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 16px;
+            height: 16px;
             fill: none;
             stroke: currentColor;
             stroke-width: 1.5;
@@ -830,7 +964,24 @@
 <body>
 
 
-    <div class="dashboard">
+    <div class="dashboard nav-panel-expanded">
+        <!-- Sandbox Mode Indicator Bar (hidden by default) -->
+        <div class="sandbox-indicator-bar" id="sandboxIndicatorBar" style="display: none;">
+            <a href="#" class="exit-link" onclick="exitSandboxMode(); return false;">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 8px;">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16,17 21,12 16,7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </div>
+                </div>
+                Exit sandbox
+            </a>
+            <span>Sandbox Mode</span>
+        </div>
+        
         <!-- Account Panel -->
         <nav class="account-panel" id="accountPanel">
             <div class="nav-content">
@@ -917,8 +1068,8 @@
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                                     <polyline points="16,17 21,12 16,7"/>
                                     <line x1="21" y1="12" x2="9" y2="12"/>
-                    </svg>
-                </div>
+                                </svg>
+                            </div>
                         </div>
                         <span class="nav-text">Sign out</span>
                     </div>
@@ -929,19 +1080,7 @@
                 <!-- Main Navigation Panel -->
         <nav class="nav-panel expanded" id="navPanel">
             <div class="nav-content">
-                <!-- Exit Sandbox Button (hidden by default) -->
-                <div class="nav-component" id="exitSandboxButton" data-tooltip="Exit sandbox mode" style="display: none;">
-                    <div class="icon">
-                        <div class="genericIcon">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                <polyline points="16,17 21,12 16,7"/>
-                                <line x1="21" y1="12" x2="9" y2="12"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <span class="nav-text">Exit sandbox</span>
-                </div>
+
                 
                 <div class="nav-component" id="accountSwitcher" data-tooltip="All accounts">
                     <div class="icon">
@@ -959,7 +1098,7 @@
                     </div>
                     <span class="nav-text" id="accountSwitcherText">All accounts</span>
                     <div class="dropdown-icon">
-                        <svg viewBox="0 0 24 24" width="24" height="24">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
                             <path d="M6 9l6 6 6-6"/>
                     </svg>
                     </div>
@@ -1155,7 +1294,7 @@
                         </svg>
                     </div>
                 </div>
-                <span>Create Sandbox</span>
+                <span>Create</span>
             </div>
             <div id="createOrgSandbox" class="sandbox-popover-item" onclick="createNewSandbox('organization')" style="display: none;">
                 <div class="icon">
@@ -1171,7 +1310,7 @@
                         </svg>
                     </div>
                 </div>
-                <span>Create Organization Sandbox</span>
+                <span>Create</span>
             </div>
             <div class="sandbox-popover-item" onclick="manageSandboxes()">
                 <div class="icon">
@@ -1352,6 +1491,7 @@
             const accountPanel = document.getElementById('accountPanel');
             const navPanel = document.getElementById('navPanel');
             const expandButton = document.querySelector('.expandButton-container');
+            const dashboard = document.querySelector('.dashboard');
             
             // Close all popovers when account panel is toggled
             hideAccountPopover();
@@ -1362,10 +1502,35 @@
                 // Close navPanel if it's open
                 navPanel.classList.remove('mobile-open');
                 accountPanel.classList.toggle('mobile-open');
+                
+                // Update dashboard class for sandbox bar positioning
+                if (accountPanel.classList.contains('mobile-open')) {
+                    dashboard.classList.add('account-panel-expanded');
+                } else {
+                    dashboard.classList.remove('account-panel-expanded');
+                }
+                
+                // Update sandbox bar position if in sandbox mode
+                if (isInSandboxMode) {
+                    updateSandboxBarPosition();
+                }
             } else {
                 // Close navPanel if it's open
                 navPanel.classList.remove('expanded');
+                dashboard.classList.remove('nav-panel-expanded');
                 accountPanel.classList.toggle('expanded');
+                
+                // Update dashboard class for sandbox bar positioning
+                if (accountPanel.classList.contains('expanded')) {
+                    dashboard.classList.add('account-panel-expanded');
+                } else {
+                    dashboard.classList.remove('account-panel-expanded');
+                }
+                
+                // Update sandbox bar position if in sandbox mode
+                if (isInSandboxMode) {
+                    updateSandboxBarPosition();
+                }
             }
             
             // Update expand button tooltip text since navPanel is now closed
@@ -1375,9 +1540,11 @@
             updateNavPanelStatus();
         }
 
+        // Toggle nav panel expansion
         function toggleNavPanel() {
             const navPanel = document.getElementById('navPanel');
             const accountPanel = document.getElementById('accountPanel');
+            const dashboard = document.querySelector('.dashboard');
             const expandButton = document.querySelector('.expandButton-container');
             
             // Close all popovers when nav panel is toggled
@@ -1390,9 +1557,17 @@
                 accountPanel.classList.remove('mobile-open');
                 navPanel.classList.toggle('mobile-open');
             } else {
-                // Close accountPanel if it's open
-                accountPanel.classList.remove('expanded');
-                navPanel.classList.toggle('expanded');
+                if (navPanel.classList.contains('expanded')) {
+                    // Close navPanel
+                    navPanel.classList.remove('expanded');
+                    dashboard.classList.remove('nav-panel-expanded');
+                } else {
+                    // Close accountPanel if it's open
+                    accountPanel.classList.remove('expanded');
+                    dashboard.classList.remove('account-panel-expanded');
+                    navPanel.classList.toggle('expanded');
+                    dashboard.classList.add('nav-panel-expanded');
+                }
             }
             
             // Update expand button tooltip text
@@ -1404,6 +1579,11 @@
             
             // Update status indicator
             updateNavPanelStatus();
+            
+            // Update sandbox bar position if in sandbox mode
+            if (isInSandboxMode) {
+                updateSandboxBarPosition();
+            }
         }
 
         // Update nav panel status indicator
@@ -1491,21 +1671,23 @@
                     return;
                 }
                 
-                // Special handling for exitSandboxButton - exit sandbox mode
-                if (this.id === 'exitSandboxButton') {
-                    exitSandboxMode();
-                    return;
-                }
+
                 
                 // Handle business account clicks - update active business account
-                if (this.classList.contains('business-account') && !isInSandboxMode) {
-                    updateActiveBusinessAccount(this);
+                const businessAccountElement = this.closest('.business-account');
+                if (businessAccountElement) {
+                    // If we're in sandbox mode, exit it first when switching to a different organization
+                    if (isInSandboxMode) {
+                        exitSandboxMode();
+                    }
+                    updateActiveBusinessAccount(businessAccountElement);
                     return;
                 }
                 
                 // Handle account clicks - update active account
-                if (this.classList.contains('account')) {
-                    updateActiveAccount(this);
+                const accountElement = this.closest('.account');
+                if (accountElement) {
+                    updateActiveAccount(accountElement);
                     return;
                 }
                 
@@ -1536,11 +1718,19 @@
             activeSandboxOrganization = organizationId;
             activeSandboxAccount = accountName;
             
-            // Show exit sandbox button
-            const exitSandboxButton = document.getElementById('exitSandboxButton');
-            if (exitSandboxButton) {
-                exitSandboxButton.style.display = 'flex';
+            // Show sandbox indicator bar
+            const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');
+            const dashboard = document.querySelector('.dashboard');
+            if (sandboxIndicatorBar) {
+                sandboxIndicatorBar.style.display = 'flex';
+                sandboxIndicatorBar.querySelector('span').textContent = `Sandbox Mode: ${sandboxName}`;
             }
+            if (dashboard) {
+                dashboard.classList.add('sandbox-mode');
+            }
+            
+            // Update sandbox bar position based on current account panel state
+            updateSandboxBarPosition();
             
             const accountSwitcher = document.getElementById('accountSwitcher');
             
@@ -1563,39 +1753,21 @@
                         </div>
                         <span class="nav-text" id="accountSwitcherText">All accounts</span>
                         <div class="dropdown-icon">
-                            <svg viewBox="0 0 24 24" width="24" height="24">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
                                 <path d="M6 9l6 6 6-6"/>
                             </svg>
                         </div>
                     `;
                     accountSwitcher.setAttribute('data-tooltip', 'Switch accounts');
-                    accountSwitcher.onclick = function(e) {
-                        e.stopPropagation();
-                        toggleAccountPopover(this);
-                    };
+                    // Remove any existing onclick handler to prevent conflicts
+                    accountSwitcher.onclick = null;
                     
                     // Populate account switcher with organization's sandboxes
                     populateAccountSwitcherForOrgSandbox(organizationId);
                 }
-            } else {
-                // For account sandboxes, show exit button
-                if (accountSwitcher) {
-                    accountSwitcher.innerHTML = `
-                        <div class="icon">
-                            <div class="genericIcon">
-                                <svg viewBox="0 0 24 24" width="16" height="16">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                    <polyline points="16,17 21,12 16,7"/>
-                                    <line x1="21" y1="12" x2="9" y2="12"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <span class="nav-text">Exit sandbox</span>
-                    `;
-                    accountSwitcher.setAttribute('data-tooltip', 'Exit sandbox mode');
-                    accountSwitcher.onclick = exitSandboxMode;
-                }
             }
+            // Note: For account sandboxes, we keep the normal account switcher functionality
+            // Users can exit via the sandbox bar exit link
             
             // Update dashboard title
             const dashboardTitle = document.getElementById('dashboardTitle');
@@ -1618,11 +1790,17 @@
             activeSandboxAccount = '';
             currentSandboxAccount = null; // Reset account navigation
             
-            // Hide exit sandbox button
-            const exitSandboxButton = document.getElementById('exitSandboxButton');
-            if (exitSandboxButton) {
-                exitSandboxButton.style.display = 'none';
+            // Hide sandbox indicator bar
+            const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');
+            const dashboard = document.querySelector('.dashboard');
+            if (sandboxIndicatorBar) {
+                sandboxIndicatorBar.style.display = 'none';
             }
+            if (dashboard) {
+                dashboard.classList.remove('sandbox-mode');
+            }
+            
+
             
             // Restore original account switcher
             const accountSwitcher = document.getElementById('accountSwitcher');
@@ -1643,20 +1821,14 @@
                     </div>
                     <span class="nav-text" id="accountSwitcherText">All accounts</span>
                     <div class="dropdown-icon">
-                        <svg viewBox="0 0 24 24" width="24" height="24">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
                             <path d="M6 9l6 6 6-6"/>
                         </svg>
                     </div>
                 `;
                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                // Clear any onclick handler - main event listener will handle clicks
                 accountSwitcher.onclick = null;
-                
-                // Re-attach account switcher click handler
-                accountSwitcher.addEventListener('click', function(e) {
-                    if (!isInSandboxMode) {
-                        toggleAccountPopover(this);
-                    }
-                });
             }
             
             // Restore dashboard title to current business account
@@ -2246,7 +2418,7 @@
                     // Viewing organization level - show create organization sandbox button
                     createAccountBtn.style.display = 'none';
                     createOrgBtn.style.display = 'flex';
-                    createOrgBtn.querySelector('span').textContent = 'Create Organization Sandbox';
+                    createOrgBtn.querySelector('span').textContent = 'Create';
                 } else {
                     // Viewing specific account - show create account sandbox button
                     createAccountBtn.style.display = 'flex';
@@ -2256,7 +2428,7 @@
                     if (isInOrgSandbox && hasSandboxAccountSelected) {
                         specificAccountName = currentSandboxAccount;
                     }
-                    createAccountBtn.querySelector('span').textContent = `Create ${specificAccountName} Sandbox`;
+                    createAccountBtn.querySelector('span').textContent = 'Create';
                 }
             }
         }
@@ -2375,6 +2547,41 @@
                 }
             }, 100);
         });
+
+        // Update sandbox bar positioning based on both panel states
+        function updateSandboxBarPosition() {
+            // Add a small delay to ensure CSS classes have been applied
+            setTimeout(() => {
+                const sandboxBar = document.getElementById('sandboxIndicatorBar');
+                const accountPanel = document.getElementById('accountPanel');
+                
+                if (sandboxBar && accountPanel) {
+                    // Only account panel state matters - sandbox bar extends over nav panel
+                    const isAccountPanelExpanded = accountPanel.classList.contains('expanded') || 
+                                                 getComputedStyle(accountPanel).width === '240px';
+                    
+                    console.log('Updating sandbox bar position:');
+                    console.log('- Account panel expanded:', isAccountPanelExpanded);
+                    
+                    let leftPosition, widthCalc;
+                    
+                    if (isAccountPanelExpanded) {
+                        // Account panel is expanded (240px) - start after it, extend over nav panel and main content
+                        leftPosition = '240px';
+                        widthCalc = 'calc(100% - 240px)';
+                        console.log('Set sandbox bar for expanded account panel');
+                    } else {
+                        // Account panel is collapsed (65px) - start after it, extend over nav panel and main content
+                        leftPosition = '65px';
+                        widthCalc = 'calc(100% - 65px)';
+                        console.log('Set sandbox bar for collapsed account panel');
+                    }
+                    
+                    sandboxBar.style.setProperty('left', leftPosition, 'important');
+                    sandboxBar.style.setProperty('width', widthCalc, 'important');
+                }
+            }, 50); // Small delay to ensure CSS transitions have started
+        }
     </script>
     
     <!-- Load the updated dashboard.js -->
