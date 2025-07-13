@@ -1133,7 +1133,7 @@
         <div class="sandbox-popover-content" id="sandbox-popover-content">
             <!-- Account-specific sandboxes will be dynamically populated here -->
             <div class="sandbox-popover-divider"></div>
-            <div class="sandbox-popover-item" onclick="createNewSandbox()">
+            <div class="sandbox-popover-item" onclick="createNewSandbox('account')">
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 24 24" width="16" height="16">
@@ -1141,7 +1141,23 @@
                         </svg>
                     </div>
                 </div>
-                <span>Create</span>
+                <span>Create Account Sandbox</span>
+            </div>
+            <div class="sandbox-popover-item" onclick="createNewSandbox('organization')">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l8-4v18"/>
+                            <path d="M19 21V11l-6-4"/>
+                            <path d="M9 9v.01"/>
+                            <path d="M9 12v.01"/>
+                            <path d="M9 15v.01"/>
+                            <path d="M9 18v.01"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>Create Organization Sandbox</span>
             </div>
             <div class="sandbox-popover-item" onclick="manageSandboxes()">
                 <div class="icon">
