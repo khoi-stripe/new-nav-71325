@@ -1043,7 +1043,7 @@
         </nav>
 
         <!-- Expand Button -->
-        <div class="expandButton-container" onclick="console.log('Expand button clicked'); toggleNavPanel();" data-tooltip="Expand">
+        <div class="expandButton-container" onclick="toggleNavPanel();" data-tooltip="Expand">
             <div class="expandButton"></div>
         </div>
 
@@ -1343,12 +1343,6 @@
             const accountPanel = document.getElementById('accountPanel');
             const expandButton = document.querySelector('.expandButton-container');
             
-            console.log('toggleNavPanel called', {
-                navPanel: navPanel ? 'found' : 'not found',
-                isExpanded: navPanel ? navPanel.classList.contains('expanded') : 'unknown',
-                windowWidth: window.innerWidth
-            });
-            
             // Close all popovers when nav panel is toggled
             hideAccountPopover();
             hideCreatePopover();
@@ -1358,27 +1352,20 @@
                 // Close accountPanel if it's open
                 accountPanel.classList.remove('mobile-open');
                 navPanel.classList.toggle('mobile-open');
-                
-                // Update tooltip text
-                if (navPanel.classList.contains('mobile-open')) {
-                    expandButton.setAttribute('data-tooltip', 'Collapse');
-                } else {
-                    expandButton.setAttribute('data-tooltip', 'Expand');
-                }
             } else {
                 // Close accountPanel if it's open
                 accountPanel.classList.remove('expanded');
                 navPanel.classList.toggle('expanded');
-                
-                // Update tooltip text
-                if (navPanel.classList.contains('expanded')) {
-                    expandButton.setAttribute('data-tooltip', 'Collapse');
-                } else {
-                    expandButton.setAttribute('data-tooltip', 'Expand');
-                }
             }
             
-            // Update status indicator (for both mobile and desktop)
+            // Update expand button tooltip text
+            if (navPanel.classList.contains('expanded') || navPanel.classList.contains('mobile-open')) {
+                expandButton.setAttribute('data-tooltip', 'Collapse');
+            } else {
+                expandButton.setAttribute('data-tooltip', 'Expand');
+            }
+            
+            // Update status indicator
             updateNavPanelStatus();
         }
 
@@ -1966,16 +1953,13 @@
                 }
             });
 
-            // Close popovers when other actions occur and handle expand button
+            // Close popovers when other actions occur
             if (expandButton) {
                 expandButton.addEventListener('click', function(e) {
                     e.stopPropagation();
                     hideAccountPopover();
                     hideCreatePopover();
                     hideSandboxPopover();
-                    
-                    // Backup expand functionality in case onclick doesn't work
-                    toggleNavPanel();
                 });
             }
 
