@@ -215,59 +215,56 @@ class Dashboard {
         const organizationId = activeAccountElement ? activeAccountElement.dataset.organization : null;
         
         // Determine current viewing context (organization vs specific account)
-        // Use a slight delay to ensure the account switcher text is updated
-        setTimeout(() => {
-            const accountSwitcherText = document.getElementById('accountSwitcherText');
-            const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+        const accountSwitcherText = document.getElementById('accountSwitcherText');
+        const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+        
+        let sandboxesToShow = [];
+        
+        if (isViewingAllAccounts && organizationId) {
+            // Show only organization sandboxes when viewing "All accounts"
+            sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
+            console.log('Showing organization sandboxes for:', organizationId);
+        } else if (!isViewingAllAccounts && accountSwitcherText) {
+            // Show account sandboxes for the specific selected account
+            const specificAccountName = accountSwitcherText.textContent;
+            sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
+            console.log('Showing account sandboxes for:', specificAccountName);
+        } else {
+            // Fallback: show account sandboxes for the main account
+            sandboxesToShow = this.getSandboxesForAccount(accountName);
+            console.log('Showing fallback account sandboxes for:', accountName);
+        }
+        
+        // Populate main container
+        if (container) {
+            sandboxesToShow.forEach((sandbox, index) => {
+                const sandboxItem = this.createSandboxItem(sandbox, index);
+                container.appendChild(sandboxItem);
+            });
             
-            let sandboxesToShow = [];
-            
-            if (isViewingAllAccounts && organizationId) {
-                // Show only organization sandboxes when viewing "All accounts"
-                sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
-                console.log('Showing organization sandboxes for:', organizationId);
-            } else if (!isViewingAllAccounts && accountSwitcherText) {
-                // Show account sandboxes for the specific selected account
-                const specificAccountName = accountSwitcherText.textContent;
-                sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
-                console.log('Showing account sandboxes for:', specificAccountName);
-            } else {
-                // Fallback: show account sandboxes for the main account
-                sandboxesToShow = this.getSandboxesForAccount(accountName);
-                console.log('Showing fallback account sandboxes for:', accountName);
-            }
-            
-            // Populate main container
-            if (container) {
-                sandboxesToShow.forEach((sandbox, index) => {
-                    const sandboxItem = this.createSandboxItem(sandbox, index);
-                    container.appendChild(sandboxItem);
-                });
+            // Update animation delays
+            this.updateAnimationDelays(container);
+        }
+        
+        // Populate sandbox popover
+        if (popoverContent) {
+            sandboxesToShow.forEach((sandbox, index) => {
+                const sandboxPopoverItem = this.createSandboxPopoverItem(sandbox, index);
                 
-                // Update animation delays
-                this.updateAnimationDelays(container);
-            }
+                // Insert before the divider (if it exists)
+                const divider = popoverContent.querySelector('.sandbox-popover-divider');
+                if (divider) {
+                    popoverContent.insertBefore(sandboxPopoverItem, divider);
+                } else {
+                    popoverContent.appendChild(sandboxPopoverItem);
+                }
+            });
             
-            // Populate sandbox popover
-            if (popoverContent) {
-                sandboxesToShow.forEach((sandbox, index) => {
-                    const sandboxPopoverItem = this.createSandboxPopoverItem(sandbox, index);
-                    
-                    // Insert before the divider (if it exists)
-                    const divider = popoverContent.querySelector('.sandbox-popover-divider');
-                    if (divider) {
-                        popoverContent.insertBefore(sandboxPopoverItem, divider);
-                    } else {
-                        popoverContent.appendChild(sandboxPopoverItem);
-                    }
-                });
-                
-                // Update animation delays for popover
-                this.updatePopoverAnimationDelays(popoverContent);
-            }
-            
-            console.log(`Updated sandbox list - Context: ${isViewingAllAccounts ? 'Organization' : 'Account'}, Sandboxes:`, sandboxesToShow);
-        }, 10); // Small delay to ensure DOM updates are complete
+            // Update animation delays for popover
+            this.updatePopoverAnimationDelays(popoverContent);
+        }
+        
+        console.log(`Updated sandbox list - Context: ${isViewingAllAccounts ? 'Organization' : 'Account'}, Sandboxes:`, sandboxesToShow);
     }
 
     // Create a sandbox item element for the main list

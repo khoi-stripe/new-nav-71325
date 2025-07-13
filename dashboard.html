@@ -1941,25 +1941,18 @@
             activeAccount.setAttribute('data-organization', newActiveData.organization);
             
             // Update the clicked account with previous active account data
-            const accountPanel = document.getElementById('accountPanel');
-            const clickedAccountInPanel = Array.from(accountPanel.querySelectorAll('.business-account')).find(item => 
-                item !== activeAccount && 
-                item.dataset.accountName === newActiveData.name
-            );
+            // businessAccountItem is the element that was clicked - update it with the previous active account data
+            const clickedAccountAvatar = businessAccountItem.querySelector('.accountAvatar');
+            const clickedAccountText = businessAccountItem.querySelector('.nav-text');
             
-            if (clickedAccountInPanel) {
-                const clickedAccountAvatar = clickedAccountInPanel.querySelector('.accountAvatar');
-                const clickedAccountText = clickedAccountInPanel.querySelector('.nav-text');
-                
-                clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
-                clickedAccountAvatar.textContent = currentActiveData.initials;
-                clickedAccountText.textContent = currentActiveData.name;
-                clickedAccountInPanel.setAttribute('data-tooltip', currentActiveData.name);
-                clickedAccountInPanel.setAttribute('data-account-name', currentActiveData.name);
-                clickedAccountInPanel.setAttribute('data-account-initials', currentActiveData.initials);
-                clickedAccountInPanel.setAttribute('data-account-color', currentActiveData.color);
-                clickedAccountInPanel.setAttribute('data-organization', currentActiveData.organization);
-            }
+            clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+            clickedAccountAvatar.textContent = currentActiveData.initials;
+            clickedAccountText.textContent = currentActiveData.name;
+            businessAccountItem.setAttribute('data-tooltip', currentActiveData.name);
+            businessAccountItem.setAttribute('data-account-name', currentActiveData.name);
+            businessAccountItem.setAttribute('data-account-initials', currentActiveData.initials);
+            businessAccountItem.setAttribute('data-account-color', currentActiveData.color);
+            businessAccountItem.setAttribute('data-organization', currentActiveData.organization);
             
                          // Update account switcher and dashboard based on whether it's an organization with accounts
              const accountSwitcher = document.getElementById('accountSwitcher');
@@ -2032,25 +2025,18 @@
             activeAccount.setAttribute('data-account-initials', newActiveData.initials);
             activeAccount.setAttribute('data-account-color', newActiveData.color);
             
-                         // Update the clicked account with previous active account data (if it's in the account panel)
-             const accountPanel = document.getElementById('accountPanel');
-             const clickedAccountInPanel = Array.from(accountPanel.querySelectorAll('.business-account')).find(item => 
-                 item !== activeAccount && 
-                 item.dataset.accountName === newActiveData.name
-             );
+                         // Update the clicked account with previous active account data
+             // accountItem is the element that was clicked - update it with the previous active account data
+             const clickedAccountAvatar = accountItem.querySelector('.accountAvatar');
+             const clickedAccountText = accountItem.querySelector('.nav-text');
              
-             if (clickedAccountInPanel) {
-                 const clickedAccountAvatar = clickedAccountInPanel.querySelector('.accountAvatar');
-                 const clickedAccountText = clickedAccountInPanel.querySelector('.nav-text');
-                 
-                 clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
-                 clickedAccountAvatar.textContent = currentActiveData.initials;
-                 clickedAccountText.textContent = currentActiveData.name;
-                 clickedAccountInPanel.setAttribute('data-tooltip', currentActiveData.name);
-                 clickedAccountInPanel.setAttribute('data-account-name', currentActiveData.name);
-                 clickedAccountInPanel.setAttribute('data-account-initials', currentActiveData.initials);
-                 clickedAccountInPanel.setAttribute('data-account-color', currentActiveData.color);
-             }
+             clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+             clickedAccountAvatar.textContent = currentActiveData.initials;
+             clickedAccountText.textContent = currentActiveData.name;
+             accountItem.setAttribute('data-tooltip', currentActiveData.name);
+             accountItem.setAttribute('data-account-name', currentActiveData.name);
+             accountItem.setAttribute('data-account-initials', currentActiveData.initials);
+             accountItem.setAttribute('data-account-color', currentActiveData.color);
              
                           // Note: Account switcher popover now shows accounts within the organization,
              // so no need to update it here as it's organization-specific
