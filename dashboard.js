@@ -218,15 +218,23 @@ class Dashboard {
         const accountSwitcherText = document.getElementById('accountSwitcherText');
         const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
         
+        // Check if we're in organization sandbox mode with a specific account selected
+        const isInOrgSandbox = typeof window !== 'undefined' && window.isInSandboxMode && window.activeSandboxType === 'organization';
+        const currentSandboxAccount = typeof window !== 'undefined' ? window.currentSandboxAccount : null;
+        
         let sandboxesToShow = [];
         
-        if (isViewingAllAccounts && organizationId) {
+        if (isInOrgSandbox && currentSandboxAccount) {
+            // In org sandbox mode with specific account selected - show account sandboxes for that mirrored account
+            sandboxesToShow = this.getSandboxesForAccount(currentSandboxAccount);
+            console.log('Showing account sandboxes for mirrored account:', currentSandboxAccount);
+        } else if (isViewingAllAccounts && organizationId) {
             // Show only organization sandboxes when viewing "All accounts"
             sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
             console.log('Showing organization sandboxes for:', organizationId);
         } else if (!isViewingAllAccounts && accountSwitcherText) {
             // Show account sandboxes for the specific selected account
-            const specificAccountName = accountSwitcherText.textContent;
+            const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
             sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
             console.log('Showing account sandboxes for:', specificAccountName);
         } else {

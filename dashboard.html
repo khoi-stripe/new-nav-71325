@@ -1526,6 +1526,7 @@
         let activeSandboxType = '';
         let activeSandboxOrganization = '';
         let activeSandboxAccount = '';
+        let currentSandboxAccount = null; // Track current account in org sandbox mode
 
         // Enter sandbox mode
         function enterSandboxMode(sandboxName, sandboxType, organizationId = null, accountName = null) {
@@ -1615,6 +1616,7 @@
             activeSandboxType = '';
             activeSandboxOrganization = '';
             activeSandboxAccount = '';
+            currentSandboxAccount = null; // Reset account navigation
             
             // Hide exit sandbox button
             const exitSandboxButton = document.getElementById('exitSandboxButton');
@@ -1877,6 +1879,16 @@
                     dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - All accounts (${mirroredAccounts.length})</span>`;
                 }
                 
+                // Reset to organization-level view
+                currentSandboxAccount = null;
+                
+                // Update sandboxes to show organization sandboxes
+                if (window.dashboard) {
+                    const currentActiveAccount = document.getElementById('active-account');
+                    const accountName = currentActiveAccount ? currentActiveAccount.dataset.accountName : null;
+                    window.dashboard.updateSandboxesForAccount(accountName);
+                }
+                
                 console.log('All accounts selected in organization sandbox mode');
                 hideAccountPopover();
             });
@@ -1921,7 +1933,15 @@
                         dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - ${selectedAccountName}</span>`;
                     }
                     
-                    console.log('Mirrored account selected:', selectedAccountName);
+                    // Navigate to the selected mirrored account
+                    currentSandboxAccount = selectedAccountName;
+                    
+                    // Update sandboxes to show account-specific sandboxes for this mirrored account
+                    if (window.dashboard) {
+                        window.dashboard.updateSandboxesForAccount(selectedAccountName);
+                    }
+                    
+                    console.log('Navigated to mirrored account:', selectedAccountName);
                     hideAccountPopover();
                 });
                 
@@ -2218,7 +2238,11 @@
             const createOrgBtn = document.getElementById('createOrgSandbox');
             
             if (createAccountBtn && createOrgBtn) {
-                if (isViewingAllAccounts) {
+                // Check if we're in org sandbox mode with a specific mirrored account selected
+                const isInOrgSandbox = isInSandboxMode && activeSandboxType === 'organization';
+                const hasSandboxAccountSelected = currentSandboxAccount !== null;
+                
+                if (isViewingAllAccounts && !hasSandboxAccountSelected) {
                     // Viewing organization level - show create organization sandbox button
                     createAccountBtn.style.display = 'none';
                     createOrgBtn.style.display = 'flex';
@@ -2228,7 +2252,10 @@
                     createAccountBtn.style.display = 'flex';
                     createOrgBtn.style.display = 'none';
                     
-                    const specificAccountName = accountSwitcherText ? accountSwitcherText.textContent : 'Account';
+                    let specificAccountName = accountSwitcherText ? accountSwitcherText.textContent.replace(' (sandbox)', '') : 'Account';
+                    if (isInOrgSandbox && hasSandboxAccountSelected) {
+                        specificAccountName = currentSandboxAccount;
+                    }
                     createAccountBtn.querySelector('span').textContent = `Create ${specificAccountName} Sandbox`;
                 }
             }
@@ -2239,12 +2266,16 @@
             // Determine current context
             const accountSwitcherText = document.getElementById('accountSwitcherText');
             const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+            const isInOrgSandbox = isInSandboxMode && activeSandboxType === 'organization';
+            const hasSandboxAccountSelected = currentSandboxAccount !== null;
             
             // Override type based on context for better UX
             let contextualType = type;
-            if (isViewingAllAccounts) {
+            let targetAccount = null;
+            
+            if (isViewingAllAccounts && !hasSandboxAccountSelected) {
                 contextualType = 'organization';
-            } else if (type === 'organization' && !isViewingAllAccounts) {
+            } else if (type === 'organization' && (!isViewingAllAccounts || hasSandboxAccountSelected)) {
                 // If trying to create org sandbox while viewing specific account, ask for confirmation
                 const confirmOrgSandbox = confirm('You are currently viewing a specific account. Do you want to create an organization-wide sandbox instead?');
                 if (!confirmOrgSandbox) {
@@ -2252,13 +2283,33 @@
                 }
             }
             
+            // Determine target account for account sandboxes
+            if (contextualType === 'account') {
+                if (isInOrgSandbox && hasSandboxAccountSelected) {
+                    targetAccount = currentSandboxAccount;
+                } else if (accountSwitcherText) {
+                    targetAccount = accountSwitcherText.textContent.replace(' (sandbox)', '');
+                }
+            }
+            
             const sandboxName = prompt(`Enter ${contextualType} sandbox name:`);
             if (sandboxName && window.dashboard) {
+                // Temporarily set the current active account for creation
+                const originalAccount = window.dashboard.currentActiveAccount;
+                if (targetAccount) {
+                    window.dashboard.currentActiveAccount = targetAccount;
+                }
+                
                 const sandbox = window.dashboard.createSandbox(sandboxName, contextualType);
+                
+                // Restore original account
+                window.dashboard.currentActiveAccount = originalAccount;
+                
                 if (sandbox) {
-                    console.log('Created sandbox:', sandboxName, 'Type:', contextualType, 'Context:', isViewingAllAccounts ? 'Organization' : 'Account');
+                    console.log('Created sandbox:', sandboxName, 'Type:', contextualType, 'Target:', targetAccount || 'organization');
                     // Show context-aware success message
-                    const contextMessage = isViewingAllAccounts ? 'organization-wide' : 'account-specific';
+                    const contextMessage = contextualType === 'organization' ? 'organization-wide' : 
+                                         targetAccount ? `for ${targetAccount}` : 'account-specific';
                     alert(`Created ${contextualType} sandbox: ${sandboxName} (${contextMessage})`);
                 }
             }
