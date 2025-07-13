@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        /* Left Navigation Panels */
+        .nav-panel, .account-panel {
+            background: #ffffff;
+            width: 65px;
+            height: 100vh;
+            padding: 16px 20px;
+            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e0e0e0;
+            box-sizing: border-box;
+        }
+
+        .account-panel {
+            background: #F5F6F8;
+            box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.08);
+        }
+
+        .account-panel {
+            z-index: 1000;
+        }
+
+        .nav-panel {
+            z-index: 1001;
+        }
+
+        .account-panel {
+            cursor: pointer;
+        }
+
+        /* Expand Button Container */
+        .expandButton-container {
+            position: fixed;
+            left: 130px; /* 65px (account panel) + 65px (nav panel) + 8px offset - 8px container padding */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px; /* Increased for better click area */
+            height: 32px; /* 16px button + 8px padding on top and bottom */
+            z-index: 1002;
+            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .expandButton-container:hover {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Expand Button */
+        .expandButton {
+            width: 2px;
+            height: 16px;
+            background-color: #e0e0e0;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+        }
+
+        /* Default state - arrow points right (expand) */
+        .expandButton-container:hover .expandButton {
+            background-color: transparent;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid #666;
+            border-bottom: 2px solid #666;
+            transform: rotate(-45deg);
+        }
+
+        /* When navPanel is expanded - arrow points left (collapse) */
+        .nav-panel.expanded ~ .expandButton-container:hover .expandButton {
+            border-right: none;
+            border-left: 2px solid #666;
+            border-bottom: 2px solid #666;
+            transform: rotate(45deg);
+        }
+
+        /* Global Tooltip Container */
+        .global-tooltip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        .tooltip-content {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateY(-50%);
+        }
+
+        .tooltip-content.show {
+            opacity: 1;
+        }
+
+        /* Mobile - hide tooltips */
+        @media (max-width: 768px) {
+            .global-tooltip {
+                display: none;
+            }
+        }
+
+        /* Account Switcher Popover */
+        .account-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateY(-8px);
+        }
+
+        .account-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .account-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .account-popover.show .account-popover-content {
+            transform: scale(1);
+        }
+
+        .account-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 2px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .account-popover.show .account-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Animation delays are now handled dynamically in JavaScript */
+
+        @keyframes slideInItem {
+            to {
+            opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .account-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .account-popover-item.selected {
+            background-color: #f0f4ff;
+            border: 1px solid #533AFD;
+        }
+
+        .account-popover-item.selected:hover {
+            background-color: #e8f0ff;
+        }
+
+        .account-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        .account-popover-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 8px 0;
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .account-popover.show .account-popover-divider {
+            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes slideInDivider {
+            to {
+            opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+
+        /* Create Popover */
+        .create-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateX(-8px);
+        }
+
+        .create-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .create-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .create-popover.show .create-popover-content {
+            transform: scale(1);
+        }
+
+        .create-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 2px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .create-popover.show .create-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .create-popover.show .create-popover-item:nth-child(1) { animation-delay: 0.05s; }
+        .create-popover.show .create-popover-item:nth-child(2) { animation-delay: 0.1s; }
+
+        .create-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .create-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        /* Sandbox Popover */
+        .sandbox-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateX(-8px);
+        }
+
+        .sandbox-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .sandbox-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .sandbox-popover.show .sandbox-popover-content {
+            transform: scale(1);
+        }
+
+        .sandbox-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 2px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .sandbox-popover.show .sandbox-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .sandbox-popover.show .sandbox-popover-item:nth-child(1) { animation-delay: 0.05s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(2) { animation-delay: 0.1s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(3) { animation-delay: 0.15s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(4) { animation-delay: 0.2s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(5) { animation-delay: 0.25s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(6) { animation-delay: 0.3s; }
+
+        .sandbox-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .sandbox-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        .sandbox-popover-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 8px 0;
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .sandbox-popover.show .sandbox-popover-divider {
+            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation-delay: 0.15s;
+        }
+
+        .nav-panel.expanded ~ .expandButton-container {
+            left: 305px; /* 65px (account panel) + 240px (expanded nav panel) + 8px offset - 8px container padding */
+        }
+
+        .account-panel.expanded ~ .nav-panel ~ .expandButton-container {
+            left: 305px; /* 240px (expanded account panel) + 65px (nav panel) + 8px offset - 8px container padding */
+        }
+
+        .nav-panel.expanded, .account-panel.expanded {
+            width: 240px;
+        }
+
+        .nav-content {
+            flex-grow: 1;
+            overflow: visible;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Unified Navigation Component */
+        .nav-component {
+            display: flex;
+            align-items: center;
+            padding: 4px 2px;
+            margin: 0;
+            cursor: pointer;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            white-space: nowrap;
+            background-color: transparent;
+            border-radius: 6px;
+        }
+
+        /* Add horizontal padding only when panels are expanded */
+        .nav-panel.expanded .nav-component,
+        .account-panel.expanded .nav-component {
+            padding: 4px 8px 4px 2px;
+        }
+
+        /* Hover State */
+        .nav-component:hover,
+        .nav-component.popover-active {
+            background-color: #F5F6F8;
+            border-radius: 8px;
+        }
+
+        /* Darker hover state for account panel nav items */
+        .account-panel .nav-component:hover,
+        .account-panel .nav-component.popover-active {
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+
+        /* Active State - Only for nav-panel items */
+        .nav-panel .nav-component.active {
+            background-color: transparent;
+        }
+
+        .nav-panel .nav-component.active .icon,
+        .nav-panel .nav-component.active .nav-text {
+            color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .placeholder-circle {
+            background-color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .company-icon {
+            background-color: #533AFD;
+            color: white;
+        }
+
+        /* Generic Icon active state - Only for nav-panel items */
+        .nav-panel .nav-component.active .genericIcon {
+            color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .genericIcon .icon-shape {
+            background-color: #533AFD;
+        }
+
+        /* Icon Shape for Generic Icons */
+        .genericIcon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-shape {
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 2px;
+        }
+
+        /* Account Avatar does NOT change color when selected */
+
+        .nav-component .icon {
+            width: 24px;
+            height: 24px;
+            color: #666;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Account Avatar - always 24px, doesn't change color when selected */
+        .accountAvatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #F5F6F8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: white;
+        }
+
+        /* Account Avatar Color Variants */
+        .accountAvatar.color-1 { background-color: #8B5CF6; }
+        .accountAvatar.color-2 { background-color: #EF4444; }
+        .accountAvatar.color-3 { background-color: #10B981; }
+        .accountAvatar.color-4 { background-color: #F59E0B; }
+        .accountAvatar.color-5 { background-color: #3B82F6; }
+        .accountAvatar.color-6 { background-color: #EC4899; }
+
+        /* Active Account Stroke */
+        .active-account-stroke {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #533AFD;
+            border-radius: 4px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Match stroke color to account avatar color */
+        .accountAvatar.color-1 + .active-account-stroke { border-color: #8B5CF6; }
+        .accountAvatar.color-2 + .active-account-stroke { border-color: #EF4444; }
+        .accountAvatar.color-3 + .active-account-stroke { border-color: #10B981; }
+        .accountAvatar.color-4 + .active-account-stroke { border-color: #F59E0B; }
+        .accountAvatar.color-5 + .active-account-stroke { border-color: #3B82F6; }
+        .accountAvatar.color-6 + .active-account-stroke { border-color: #EC4899; }
+
+        /* Generic Icon - 24px container with 16px icon centered */
+        /* Can contain either SVG illustrations or generic circle fallback */
+        .genericIcon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        /* Generic circle fallback when no specific icon is provided */
+        .genericIcon .icon-shape {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #D1D5DB;
+        }
+
+        /* SVG illustrations - always 16px and centered */
+        .icon .genericIcon svg {
+            width: 16px !important;
+            height: 16px !important;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Legacy placeholder circle for backward compatibility */
+        .placeholder-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #F5F6F8;
+        }
+
+        .company-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #F5F6F8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .nav-component .nav-text {
+            margin-left: 8px;
+            color: var(--Text-Default, #333);
+            font-family: "SF Pro Text";
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 20px; /* 142.857% */
+            letter-spacing: -0.15px;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .nav-panel.expanded .nav-component .nav-text, 
+        .account-panel.expanded .nav-component .nav-text {
+            opacity: 1;
+        }
+
+
+
+        /* Navigation Divider */
+        .nav-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 8px 0;
+            width: 100%;
+        }
+
+        /* Navigation Group */
+        .nav-group {
+            width: 100%;
+        }
+
+        .nav-group:first-child {
+            flex: 1;
+        }
+
+        .nav-group-bottom {
+            margin-top: auto;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+        }
+
+
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: 60px;
+            padding: 0 32px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .searchField {
+            width: 360px;
+            height: 36px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-right: auto;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-circle {
+            width: 16px;
+            height: 16px;
+            background-color: #D1D5DB;
+            border-radius: 50%;
+        }
+
+
+
+
+
+
+
+        .nav-component .dropdown-icon {
+            width: 24px;
+            height: 24px;
+            color: #666;
+            flex-shrink: 0;
+            margin-left: auto;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .nav-panel.expanded .nav-component .dropdown-icon {
+            opacity: 1;
+        }
+
+        .nav-component .dropdown-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+
+
+        .content-area {
+            flex: 1;
+            padding: 0 32px 32px 32px;
+            overflow-y: auto;
+        }
+
+        .placeholder-block {
+            background: #f8f9fa;
+            border-radius: 12px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            color: #666;
+        }
+
+        .placeholder-content h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .placeholder-content p {
+            font-size: 16px;
+            color: #666;
+        }
+
+
+
+        /* Icons */
+        .icon svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-panel {
+                position: fixed;
+                left: -60px;
+                z-index: 1000;
+            }
+
+            .account-panel {
+                position: fixed;
+                left: -120px;
+                z-index: 999;
+            }
+
+            .nav-panel.mobile-open {
+                left: 0;
+            }
+
+            .account-panel.mobile-open {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header {
+                padding: 0 20px;
+            }
+
+            .content-area {
+                padding: 0 20px 20px 20px;
+            }
+
+            .nav-panel, .account-panel {
+                padding: 12px 16px;
+            }
+
+            .nav-component {
+                padding: 8px 4px;
+                margin: -4px;
+            }
+
+            .expandButton-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="dashboard">
+        <!-- Account Panel -->
+        <nav class="account-panel" id="accountPanel">
+            <div class="nav-content">
+                <div class="nav-group" id="nav-group-top">
+                                                                                <div class="nav-component active business-account organization" id="active-account" data-tooltip="Acme, Inc." data-account-name="Acme, Inc." data-account-initials="AI" data-account-color="color-1" data-organization="acme-inc">
+                        <div class="icon">
+                            <div class="accountAvatar color-1">AI</div>
+                            <div class="active-account-stroke"></div>
+                        </div>
+                        <span class="nav-text">Acme, Inc.</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Settings">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                            </div>
+                        </div>
+                    <span class="nav-text">Settings</span>
+                </div>
+                    
+                    <div class="nav-component" id="sandboxTrigger" data-tooltip="Switch to sandbox">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M12.89 1.45l8 4A2 2 0 0 1 22 7.24v9.53a2 2 0 0 1-1.11 1.79l-8 4a2 2 0 0 1-1.78 0l-8-4a2 2 0 0 1-1.11-1.79V7.24a2 2 0 0 1 1.11-1.79l8-4a2 2 0 0 1 1.78 0z"/>
+                                    <polyline points="2.32,6.16 12,11 21.68,6.16"/>
+                                    <line x1="12" y1="22.76" x2="12" y2="11"/>
+                                    <line x1="7" y1="3.5" x2="17" y2="8.5"/>
+                    </svg>
+                            </div>
+                        </div>
+                    <span class="nav-text">Switch to sandbox</span>
+                </div>
+                    
+                    <div class="nav-divider"></div>
+                    
+                    <div class="nav-component business-account" data-tooltip="Cactus Practice" data-account-name="Cactus Practice" data-account-initials="CP" data-account-color="color-2">
+                        <div class="icon">
+                            <div class="accountAvatar color-2">CP</div>
+                        </div>
+                        <span class="nav-text">Cactus Practice</span>
+                    </div>
+                    
+                    <div class="nav-component business-account organization" data-tooltip="Lil'Fatsos" data-account-name="Lil'Fatsos" data-account-initials="LF" data-account-color="color-3" data-organization="lil-fatsos">
+                        <div class="icon">
+                            <div class="accountAvatar color-3">LF</div>
+                        </div>
+                        <span class="nav-text">Lil'Fatsos</span>
+                    </div>
+                    
+                    <div class="nav-component" id="createTrigger" data-tooltip="Create">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M12 5v14m-7-7h14"/>
+                    </svg>
+                </div>
+            </div>
+                        <span class="nav-text">Create</span>
+                </div>
+                </div>
+                
+                <div class="nav-group nav-group-bottom">
+                    <div class="nav-component" data-tooltip="username">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                        </div>
+                        <span class="nav-text">username</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Sign out">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16,17 21,12 16,7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </div>
+                        </div>
+                        <span class="nav-text">Sign out</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+                <!-- Main Navigation Panel -->
+        <nav class="nav-panel" id="navPanel">
+            <div class="nav-content">
+                <div class="nav-component" id="accountSwitcher" data-tooltip="All accounts">
+                    <div class="icon">
+                        <div class="genericIcon">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path d="M3 21h18"/>
+                                <path d="M5 21V7l8-4v18"/>
+                                <path d="M19 21V11l-6-4"/>
+                                <path d="M9 9v.01"/>
+                                <path d="M9 12v.01"/>
+                                <path d="M9 15v.01"/>
+                                <path d="M9 18v.01"/>
+                    </svg>
+                </div>
+                    </div>
+                    <span class="nav-text" id="accountSwitcherText">All accounts</span>
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                    </div>
+                </div>
+                
+                <div class="nav-group" id="main_nav">
+                    <div class="nav-component active" data-tooltip="Home">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Home</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Balances">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Balances</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Transactions">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Transactions</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Customers">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Customers</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Product catalog">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Product catalog</span>
+                    </div>
+                </div>
+                
+                <div class="nav-group" id="workloads" style="margin-top: 24px;">
+                    <div class="nav-component" data-tooltip="Connect">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Connect</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Payments">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Payments</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Billing">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Billing</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="Reporting">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Reporting</span>
+                    </div>
+                    
+                    <div class="nav-component" data-tooltip="More">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">More</span>
+                    </div>
+                </div>
+                
+                <div class="nav-group" style="margin-top: auto;">
+                    <div class="nav-component" data-tooltip="Developers">
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <div class="icon-shape"></div>
+                            </div>
+                        </div>
+                        <span class="nav-text">Developers</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Expand Button -->
+        <div class="expandButton-container" onclick="console.log('Expand button clicked'); toggleNavPanel();" data-tooltip="Expand">
+            <div class="expandButton"></div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="header">
+                <div class="searchField"></div>
+                <div class="header-actions">
+                    <div class="header-circle"></div>
+                    <div class="header-circle"></div>
+                    <div class="header-circle"></div>
+                </div>
+            </div>
+            
+            <div class="content-area">
+                <div class="placeholder-block">
+                    <div class="placeholder-content">
+                        <h2 id="dashboardTitle">Acme, Inc. dashboard<br><span id="accountSubtitle">All accounts (8)</span></h2>
+                        <div id="sandboxStatus" style="margin-top: 16px; padding: 12px; background: #f0f8ff; border-radius: 6px; font-size: 14px; color: #1976d2;">
+                            <strong>Sandbox System:</strong> <span id="sandboxStatusText">Loading...</span>
+                        </div>
+                        <div id="navPanelStatus" style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404;">
+                            <strong>Nav Panel:</strong> <span id="navPanelStatusText">Collapsed</span> • 
+                            <button onclick="toggleNavPanel()" style="background: #ffc107; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                Toggle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Global Tooltip Container -->
+    <div id="globalTooltip" class="global-tooltip">
+        <div class="tooltip-content"></div>
+    </div>
+
+    <!-- Account Switcher Popover -->
+    <div id="accountPopover" class="account-popover">
+        <div class="account-popover-content" id="account-popover-content">
+            <!-- Content will be populated dynamically based on selected organization -->
+        </div>
+    </div>
+
+    <!-- Create Popover -->
+    <div id="createPopover" class="create-popover">
+        <div class="create-popover-content">
+            <div class="create-popover-item">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M12 5v14m-7-7h14"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>Create account</span>
+            </div>
+            <div class="create-popover-item">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l8-4v18"/>
+                            <path d="M19 21V11l-6-4"/>
+                            <path d="M9 9v.01"/>
+                            <path d="M9 12v.01"/>
+                            <path d="M9 15v.01"/>
+                            <path d="M9 18v.01"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>Create organization</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sandbox Popover -->
+    <div id="sandboxPopover" class="sandbox-popover">
+        <div class="sandbox-popover-content" id="sandbox-popover-content">
+            <!-- Account-specific sandboxes will be dynamically populated here -->
+            <div class="sandbox-popover-divider"></div>
+            <div class="sandbox-popover-item" onclick="createNewSandbox()">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M12 5v14m-7-7h14"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>Create</span>
+            </div>
+            <div class="sandbox-popover-item" onclick="manageSandboxes()">
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>Manage sandboxes</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global tooltip functions
+        function showTooltip(element, text) {
+            if (window.innerWidth <= 768) return; // Hide on mobile
+            
+            const tooltip = document.getElementById('globalTooltip');
+            const content = tooltip.querySelector('.tooltip-content');
+            const rect = element.getBoundingClientRect();
+            
+            content.textContent = text;
+            content.style.left = (rect.right + 8) + 'px';
+            content.style.top = (rect.top + rect.height / 2) + 'px';
+            content.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('globalTooltip');
+            const content = tooltip.querySelector('.tooltip-content');
+            content.classList.remove('show');
+        }
+
+
+
+        function showAccountPopover(element) {
+            const popover = document.getElementById('accountPopover');
+            const rect = element.getBoundingClientRect();
+            
+            // Position the popover 4px below the element, left-aligned
+            popover.style.left = rect.left + 'px';
+            popover.style.top = (rect.bottom + 4) + 'px';
+            
+            popover.classList.add('show');
+            
+            // Add popover-active class to maintain hover state
+            element.classList.add('popover-active');
+            
+            // Hide tooltip when popover is shown
+            hideTooltip();
+        }
+
+        function hideAccountPopover() {
+            const popover = document.getElementById('accountPopover');
+            popover.classList.remove('show');
+            
+            // Remove popover-active class from account switcher
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            if (accountSwitcher) {
+                accountSwitcher.classList.remove('popover-active');
+            }
+        }
+
+        function toggleAccountPopover(element) {
+            const popover = document.getElementById('accountPopover');
+            if (popover.classList.contains('show')) {
+                hideAccountPopover();
+            } else {
+                // Close all other popovers before opening this one
+                hideCreatePopover();
+                hideSandboxPopover();
+                // Remove popover-active class from other nav components
+                document.querySelectorAll('.nav-component.popover-active').forEach(component => {
+                    if (component !== element) {
+                        component.classList.remove('popover-active');
+                    }
+                });
+                showAccountPopover(element);
+            }
+        }
+
+        function showCreatePopover(element) {
+            const popover = document.getElementById('createPopover');
+            const rect = element.getBoundingClientRect();
+            
+            // Position the popover to the right of the element with 4px spacing
+            popover.style.left = (rect.right + 4) + 'px';
+            popover.style.top = rect.top + 'px';
+            
+            popover.classList.add('show');
+            
+            // Add popover-active class to maintain hover state
+            element.classList.add('popover-active');
+            
+            // Hide tooltip when popover is shown
+            hideTooltip();
+        }
+
+        function hideCreatePopover() {
+            const popover = document.getElementById('createPopover');
+            popover.classList.remove('show');
+            
+            // Remove popover-active class from create trigger
+            const createTrigger = document.getElementById('createTrigger');
+            if (createTrigger) {
+                createTrigger.classList.remove('popover-active');
+            }
+        }
+
+        function toggleCreatePopover(element) {
+            const popover = document.getElementById('createPopover');
+            if (popover.classList.contains('show')) {
+                hideCreatePopover();
+            } else {
+                // Close all other popovers before opening this one
+                hideAccountPopover();
+                hideSandboxPopover();
+                // Remove popover-active class from other nav components
+                document.querySelectorAll('.nav-component.popover-active').forEach(component => {
+                    if (component !== element) {
+                        component.classList.remove('popover-active');
+                    }
+                });
+                showCreatePopover(element);
+            }
+        }
+
+        function showSandboxPopover(element) {
+            const popover = document.getElementById('sandboxPopover');
+            const rect = element.getBoundingClientRect();
+            
+            // Position the popover to the right of the element with 4px spacing
+            popover.style.left = (rect.right + 4) + 'px';
+            popover.style.top = rect.top + 'px';
+            
+            popover.classList.add('show');
+            
+            // Add popover-active class to maintain hover state
+            element.classList.add('popover-active');
+            
+            // Hide tooltip when popover is shown
+            hideTooltip();
+        }
+
+        function hideSandboxPopover() {
+            const popover = document.getElementById('sandboxPopover');
+            popover.classList.remove('show');
+            
+            // Remove popover-active class from sandbox trigger
+            const sandboxTrigger = document.getElementById('sandboxTrigger');
+            if (sandboxTrigger) {
+                sandboxTrigger.classList.remove('popover-active');
+            }
+        }
+
+        function toggleSandboxPopover(element) {
+            const popover = document.getElementById('sandboxPopover');
+            if (popover.classList.contains('show')) {
+                hideSandboxPopover();
+            } else {
+                // Close all other popovers before opening this one
+                hideAccountPopover();
+                hideCreatePopover();
+                // Remove popover-active class from other nav components
+                document.querySelectorAll('.nav-component.popover-active').forEach(component => {
+                    if (component !== element) {
+                        component.classList.remove('popover-active');
+                    }
+                });
+                showSandboxPopover(element);
+            }
+        }
+
+        function toggleAccountPanel() {
+            const accountPanel = document.getElementById('accountPanel');
+            const navPanel = document.getElementById('navPanel');
+            const expandButton = document.querySelector('.expandButton-container');
+            
+            // Close all popovers when account panel is toggled
+            hideAccountPopover();
+            hideCreatePopover();
+            hideSandboxPopover();
+            
+            if (window.innerWidth <= 768) {
+                // Close navPanel if it's open
+                navPanel.classList.remove('mobile-open');
+                accountPanel.classList.toggle('mobile-open');
+            } else {
+                // Close navPanel if it's open
+                navPanel.classList.remove('expanded');
+                accountPanel.classList.toggle('expanded');
+            }
+            
+            // Update expand button tooltip text since navPanel is now closed
+            expandButton.setAttribute('data-tooltip', 'Expand');
+            
+            // Update status indicator
+            updateNavPanelStatus();
+        }
+
+        function toggleNavPanel() {
+            const navPanel = document.getElementById('navPanel');
+            const accountPanel = document.getElementById('accountPanel');
+            const expandButton = document.querySelector('.expandButton-container');
+            
+            console.log('toggleNavPanel called', {
+                navPanel: navPanel ? 'found' : 'not found',
+                isExpanded: navPanel ? navPanel.classList.contains('expanded') : 'unknown',
+                windowWidth: window.innerWidth
+            });
+            
+            // Close all popovers when nav panel is toggled
+            hideAccountPopover();
+            hideCreatePopover();
+            hideSandboxPopover();
+            
+            if (window.innerWidth <= 768) {
+                // Close accountPanel if it's open
+                accountPanel.classList.remove('mobile-open');
+                navPanel.classList.toggle('mobile-open');
+                
+                // Update tooltip text
+                if (navPanel.classList.contains('mobile-open')) {
+                    expandButton.setAttribute('data-tooltip', 'Collapse');
+                } else {
+                    expandButton.setAttribute('data-tooltip', 'Expand');
+                }
+            } else {
+                // Close accountPanel if it's open
+                accountPanel.classList.remove('expanded');
+                navPanel.classList.toggle('expanded');
+                
+                // Update tooltip text
+                if (navPanel.classList.contains('expanded')) {
+                    expandButton.setAttribute('data-tooltip', 'Collapse');
+                } else {
+                    expandButton.setAttribute('data-tooltip', 'Expand');
+                }
+            }
+            
+            // Update status indicator (for both mobile and desktop)
+            updateNavPanelStatus();
+        }
+
+        // Update nav panel status indicator
+        function updateNavPanelStatus() {
+            const navPanel = document.getElementById('navPanel');
+            const statusText = document.getElementById('navPanelStatusText');
+            
+            if (statusText && navPanel) {
+                const isExpanded = navPanel.classList.contains('expanded') || navPanel.classList.contains('mobile-open');
+                statusText.textContent = isExpanded ? 'Expanded' : 'Collapsed';
+            }
+        }
+
+        // Make sure toggleNavPanel is available globally
+        window.toggleNavPanel = toggleNavPanel;
+
+        // Close navigation when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const navPanel = document.getElementById('navPanel');
+            const accountPanel = document.getElementById('accountPanel');
+            const expandButton = document.querySelector('.expandButton-container');
+            
+            if (window.innerWidth <= 768) {
+                const clickedExpandButton = expandButton && expandButton.contains(e.target);
+                
+                if (!navPanel.contains(e.target) && !accountPanel.contains(e.target) && !clickedExpandButton) {
+                    navPanel.classList.remove('mobile-open');
+                    accountPanel.classList.remove('mobile-open');
+                }
+            }
+        });
+
+        // Handle accountPanel clicks - expand/collapse when clicking anywhere on the panel
+        document.getElementById('accountPanel').addEventListener('click', function(e) {
+            toggleAccountPanel();
+        });
+
+        // Handle main-content clicks - collapse accountPanel if it's open
+        document.querySelector('.main-content').addEventListener('click', function(e) {
+            const accountPanel = document.getElementById('accountPanel');
+            
+            if (window.innerWidth <= 768) {
+                if (accountPanel.classList.contains('mobile-open')) {
+                    accountPanel.classList.remove('mobile-open');
+                }
+            } else {
+                if (accountPanel.classList.contains('expanded')) {
+                    accountPanel.classList.remove('expanded');
+                }
+            }
+        });
+
+        // Handle nav component clicks
+        document.querySelectorAll('.nav-component').forEach(component => {
+            component.addEventListener('click', function(e) {
+                // Stop event propagation to prevent panel expansion
+                e.stopPropagation();
+                
+                // Special handling for accountSwitcher - toggle popover or exit sandbox
+                if (this.id === 'accountSwitcher') {
+                    if (isInSandboxMode) {
+                        if (activeSandboxType === 'account') {
+                            // In account sandbox mode, this is the exit button
+                            exitSandboxMode();
+                        } else {
+                            // In organization sandbox mode, toggle account popover
+                            toggleAccountPopover(this);
+                        }
+                    } else {
+                        // Normal mode, toggle account popover
+                        toggleAccountPopover(this);
+                    }
+                    return;
+                }
+                
+                // Special handling for createTrigger - toggle popover
+                if (this.id === 'createTrigger') {
+                    toggleCreatePopover(this);
+                    return;
+                }
+                
+                // Special handling for sandboxTrigger - toggle popover
+                if (this.id === 'sandboxTrigger') {
+                    toggleSandboxPopover(this);
+                    return;
+                }
+                
+                // Handle business account clicks - update active business account
+                if (this.classList.contains('business-account') && !isInSandboxMode) {
+                    updateActiveBusinessAccount(this);
+                    return;
+                }
+                
+                // Handle account clicks - update active account
+                if (this.classList.contains('account')) {
+                    updateActiveAccount(this);
+                    return;
+                }
+                
+                // Only handle active states for nav-panel items
+                const parentPanel = this.closest('.nav-panel, .account-panel');
+                if (parentPanel && parentPanel.classList.contains('nav-panel')) {
+                    // Remove active class from all components in the nav-panel
+                    parentPanel.querySelectorAll('.nav-component').forEach(i => i.classList.remove('active'));
+                    // Add active class to clicked component
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Sandbox mode tracking
+        let isInSandboxMode = false;
+        let activeSandboxName = '';
+        let activeSandboxType = '';
+        let activeSandboxOrganization = '';
+        let activeSandboxAccount = '';
+
+        // Enter sandbox mode
+        function enterSandboxMode(sandboxName, sandboxType, organizationId = null, accountName = null) {
+            isInSandboxMode = true;
+            activeSandboxName = sandboxName;
+            activeSandboxType = sandboxType;
+            activeSandboxOrganization = organizationId;
+            activeSandboxAccount = accountName;
+            
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            
+            if (sandboxType === 'organization') {
+                // For organization sandboxes, show account switcher with mirrored accounts
+                if (accountSwitcher) {
+                    accountSwitcher.innerHTML = `
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M3 21h18"/>
+                                    <path d="M5 21V7l8-4v18"/>
+                                    <path d="M19 21V11l-6-4"/>
+                                    <path d="M9 9v.01"/>
+                                    <path d="M9 12v.01"/>
+                                    <path d="M9 15v.01"/>
+                                    <path d="M9 18v.01"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="nav-text" id="accountSwitcherText">All accounts</span>
+                        <div class="dropdown-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </div>
+                    `;
+                    accountSwitcher.setAttribute('data-tooltip', 'Switch accounts');
+                    accountSwitcher.onclick = function(e) {
+                        e.stopPropagation();
+                        toggleAccountPopover(this);
+                    };
+                    
+                    // Populate account switcher with organization's accounts
+                    populateAccountSwitcher(organizationId);
+                }
+            } else {
+                // For account sandboxes, show exit button
+                if (accountSwitcher) {
+                    accountSwitcher.innerHTML = `
+                        <div class="icon">
+                            <div class="genericIcon">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16,17 21,12 16,7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="nav-text">Exit sandbox</span>
+                    `;
+                    accountSwitcher.setAttribute('data-tooltip', 'Exit sandbox mode');
+                    accountSwitcher.onclick = exitSandboxMode;
+                }
+            }
+            
+            // Update dashboard title
+            const dashboardTitle = document.getElementById('dashboardTitle');
+            if (dashboardTitle) {
+                if (sandboxType === 'organization') {
+                    const accounts = organizationAccounts[organizationId] || [];
+                    dashboardTitle.innerHTML = `${sandboxName}<br><span id="accountSubtitle">Sandbox mode - All accounts (${accounts.length})</span>`;
+                } else {
+                    dashboardTitle.innerHTML = `${sandboxName}<br><span id="accountSubtitle">Sandbox mode</span>`;
+                }
+            }
+        }
+
+        // Exit sandbox mode
+        function exitSandboxMode() {
+            isInSandboxMode = false;
+            activeSandboxName = '';
+            activeSandboxType = '';
+            activeSandboxOrganization = '';
+            activeSandboxAccount = '';
+            
+            // Restore original account switcher
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            if (accountSwitcher) {
+                accountSwitcher.innerHTML = `
+                    <div class="icon">
+                        <div class="genericIcon">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path d="M3 21h18"/>
+                                <path d="M5 21V7l8-4v18"/>
+                                <path d="M19 21V11l-6-4"/>
+                                <path d="M9 9v.01"/>
+                                <path d="M9 12v.01"/>
+                                <path d="M9 15v.01"/>
+                                <path d="M9 18v.01"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="nav-text" id="accountSwitcherText">All accounts</span>
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </div>
+                `;
+                accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                accountSwitcher.onclick = null;
+                
+                // Re-attach account switcher click handler
+                accountSwitcher.addEventListener('click', function(e) {
+                    if (!isInSandboxMode) {
+                        toggleAccountPopover(this);
+                    }
+                });
+            }
+            
+            // Restore dashboard title to current business account
+            const activeAccount = document.getElementById('active-account');
+            const dashboardTitle = document.getElementById('dashboardTitle');
+            if (activeAccount && dashboardTitle) {
+                const businessName = activeAccount.dataset.accountName;
+                const organizationId = activeAccount.dataset.organization;
+                const accounts = organizationAccounts[organizationId] || [];
+                
+                if (organizationId && accounts.length > 0) {
+                    dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
+                } else {
+                    dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">${businessName}</span>`;
+                }
+            }
+        }
+
+        // Organization accounts data
+        const organizationAccounts = {
+            'acme-inc': [
+                { name: 'Acme Eats US', initials: 'AE', color: 'color-1' },
+                { name: 'Acme Eats UK', initials: 'AE', color: 'color-2' },
+                { name: 'Acme Deliveries US', initials: 'AD', color: 'color-3' },
+                { name: 'Acme Deliveries Canada', initials: 'AD', color: 'color-4' },
+                { name: 'Acme Rides US', initials: 'AR', color: 'color-5' },
+                { name: 'Acme Rides Europe', initials: 'AR', color: 'color-6' },
+                { name: 'Acme Financial Services', initials: 'AF', color: 'color-1' },
+                { name: 'Acme Technology Division', initials: 'AT', color: 'color-2' }
+            ],
+            'lil-fatsos': [
+                { name: 'Lil\'Fatsos Downtown', initials: 'LD', color: 'color-1' },
+                { name: 'Lil\'Fatsos Midtown', initials: 'LM', color: 'color-2' },
+                { name: 'Lil\'Fatsos Westside', initials: 'LW', color: 'color-3' },
+                { name: 'Lil\'Fatsos Airport', initials: 'LA', color: 'color-4' }
+            ]
+        };
+
+        // Populate account switcher popover based on selected organization
+        function populateAccountSwitcher(organizationId) {
+            const accountPopoverContent = document.getElementById('account-popover-content');
+            const accounts = organizationAccounts[organizationId] || [];
+            
+            // Clear existing content
+            accountPopoverContent.innerHTML = '';
+            
+                         // Add "All accounts" header
+             const allAccountsItem = document.createElement('div');
+             allAccountsItem.className = 'account-popover-item selected';
+             allAccountsItem.innerHTML = `
+                 <div class="icon">
+                     <div class="genericIcon">
+                         <svg viewBox="0 0 24 24" width="16" height="16">
+                             <path d="M3 21h18"/>
+                             <path d="M5 21V7l8-4v18"/>
+                             <path d="M19 21V11l-6-4"/>
+                             <path d="M9 9v.01"/>
+                             <path d="M9 12v.01"/>
+                             <path d="M9 15v.01"/>
+                             <path d="M9 18v.01"/>
+                         </svg>
+                     </div>
+                 </div>
+                 <span>All accounts</span>
+             `;
+             
+             // Add click handler for "All accounts"
+             allAccountsItem.addEventListener('click', function() {
+                 // Remove selected class from all items
+                 accountPopoverContent.querySelectorAll('.account-popover-item').forEach(item => {
+                     item.classList.remove('selected');
+                 });
+                 // Add selected class to this item
+                 this.classList.add('selected');
+                 
+                 // Update account switcher to show "All accounts"
+                 const accountSwitcher = document.getElementById('accountSwitcher');
+                 const accountSwitcherText = document.getElementById('accountSwitcherText');
+                 
+                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                 accountSwitcherText.textContent = 'All accounts';
+                 
+                 // Update dashboard account subtitle with account count
+                 const accountSubtitle = document.getElementById('accountSubtitle');
+                 if (accountSubtitle) {
+                     const currentActiveAccount = document.getElementById('active-account');
+                     const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
+                     const accounts = organizationAccounts[organizationId] || [];
+                     accountSubtitle.textContent = `All accounts (${accounts.length})`;
+                 }
+                 
+                 console.log('All accounts selected');
+                 hideAccountPopover();
+             });
+             
+             accountPopoverContent.appendChild(allAccountsItem);
+            
+            // Add accounts for the organization
+            accounts.forEach(account => {
+                const accountItem = document.createElement('div');
+                accountItem.className = 'account-popover-item account';
+                accountItem.setAttribute('data-account-name', account.name);
+                accountItem.setAttribute('data-account-initials', account.initials);
+                accountItem.setAttribute('data-account-color', account.color);
+                accountItem.innerHTML = `
+                    <div class="icon">
+                        <div class="accountAvatar ${account.color}">${account.initials}</div>
+                    </div>
+                    <span>${account.name}</span>
+                `;
+                accountPopoverContent.appendChild(accountItem);
+            });
+            
+                         // Re-attach click handlers to new account items
+             accountPopoverContent.querySelectorAll('.account').forEach(item => {
+                 item.addEventListener('click', function() {
+                     // Remove selected class from all items
+                     accountPopoverContent.querySelectorAll('.account-popover-item').forEach(popoverItem => {
+                         popoverItem.classList.remove('selected');
+                     });
+                     // Add selected class to this item
+                     this.classList.add('selected');
+                     
+                     // Update account switcher to show selected account name
+                     const accountSwitcher = document.getElementById('accountSwitcher');
+                     const accountSwitcherText = document.getElementById('accountSwitcherText');
+                     const selectedAccountName = this.querySelector('span').textContent;
+                     
+                     accountSwitcher.setAttribute('data-tooltip', selectedAccountName);
+                     accountSwitcherText.textContent = selectedAccountName;
+                     
+                     // Update dashboard account subtitle
+                     const accountSubtitle = document.getElementById('accountSubtitle');
+                     if (accountSubtitle) {
+                         accountSubtitle.textContent = selectedAccountName;
+                     }
+                     
+                     console.log('Account selected:', selectedAccountName);
+                     hideAccountPopover();
+                 });
+             });
+             
+             // Add animation delays to all items
+             accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
+                 item.style.animationDelay = `${(index + 1) * 0.05}s`;
+             });
+        }
+
+        // Update active business account function with account switcher update
+        function updateActiveBusinessAccount(businessAccountItem) {
+            const activeAccount = document.getElementById('active-account');
+            
+            // Get current active account data
+            const currentActiveData = {
+                name: activeAccount.dataset.accountName,
+                initials: activeAccount.dataset.accountInitials,
+                color: activeAccount.dataset.accountColor,
+                organization: activeAccount.dataset.organization
+            };
+            
+            // Get clicked account data
+            const newActiveData = {
+                name: businessAccountItem.dataset.accountName,
+                initials: businessAccountItem.dataset.accountInitials,
+                color: businessAccountItem.dataset.accountColor,
+                organization: businessAccountItem.dataset.organization
+            };
+            
+            // Only proceed if we're switching to a different business account
+            if (currentActiveData.name === newActiveData.name) {
+                return;
+            }
+            
+            // Update the active account with new data
+            const activeAccountAvatar = activeAccount.querySelector('.accountAvatar');
+            const activeAccountText = activeAccount.querySelector('.nav-text');
+            
+            activeAccountAvatar.className = `accountAvatar ${newActiveData.color}`;
+            activeAccountAvatar.textContent = newActiveData.initials;
+            activeAccountText.textContent = newActiveData.name;
+            activeAccount.setAttribute('data-tooltip', newActiveData.name);
+            activeAccount.setAttribute('data-account-name', newActiveData.name);
+            activeAccount.setAttribute('data-account-initials', newActiveData.initials);
+            activeAccount.setAttribute('data-account-color', newActiveData.color);
+            activeAccount.setAttribute('data-organization', newActiveData.organization);
+            
+            // Update the clicked account with previous active account data
+            const accountPanel = document.getElementById('accountPanel');
+            const clickedAccountInPanel = Array.from(accountPanel.querySelectorAll('.business-account')).find(item => 
+                item !== activeAccount && 
+                item.dataset.accountName === newActiveData.name
+            );
+            
+            if (clickedAccountInPanel) {
+                const clickedAccountAvatar = clickedAccountInPanel.querySelector('.accountAvatar');
+                const clickedAccountText = clickedAccountInPanel.querySelector('.nav-text');
+                
+                clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+                clickedAccountAvatar.textContent = currentActiveData.initials;
+                clickedAccountText.textContent = currentActiveData.name;
+                clickedAccountInPanel.setAttribute('data-tooltip', currentActiveData.name);
+                clickedAccountInPanel.setAttribute('data-account-name', currentActiveData.name);
+                clickedAccountInPanel.setAttribute('data-account-initials', currentActiveData.initials);
+                clickedAccountInPanel.setAttribute('data-account-color', currentActiveData.color);
+                clickedAccountInPanel.setAttribute('data-organization', currentActiveData.organization);
+            }
+            
+                         // Update account switcher and dashboard based on whether it's an organization with accounts
+             const accountSwitcher = document.getElementById('accountSwitcher');
+             const accountSwitcherText = document.getElementById('accountSwitcherText');
+             const dashboardTitle = document.getElementById('dashboardTitle');
+             
+             const accounts = organizationAccounts[newActiveData.organization] || [];
+             
+             if (!isInSandboxMode) {
+                 if (newActiveData.organization && accounts.length > 0) {
+                     // It's an organization with accounts - show account switcher and populate accounts
+                     accountSwitcher.style.display = 'flex';
+                     populateAccountSwitcher(newActiveData.organization);
+                     
+                     accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                     accountSwitcherText.textContent = 'All accounts';
+                     
+                     dashboardTitle.innerHTML = `${newActiveData.name} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
+                 } else {
+                     // Not an organization or no accounts - hide account switcher
+                     accountSwitcher.style.display = 'none';
+                     const accountPopoverContent = document.getElementById('account-popover-content');
+                     accountPopoverContent.innerHTML = '';
+                     
+                     dashboardTitle.innerHTML = `${newActiveData.name} dashboard<br><span id="accountSubtitle">${newActiveData.name}</span>`;
+                 }
+             }
+        }
+
+        // Update active account function with position swapping
+        function updateActiveAccount(accountItem) {
+            const activeAccount = document.getElementById('active-account');
+            
+            // Get current active account data
+            const currentActiveData = {
+                name: activeAccount.dataset.accountName,
+                initials: activeAccount.dataset.accountInitials,
+                color: activeAccount.dataset.accountColor
+            };
+            
+            // Get clicked account data
+            const newActiveData = {
+                name: accountItem.dataset.accountName,
+                initials: accountItem.dataset.accountInitials,
+                color: accountItem.dataset.accountColor
+            };
+            
+            // Only proceed if we're switching to a different account
+            if (currentActiveData.name === newActiveData.name) {
+                return;
+            }
+            
+            // Update the active account with new data
+            const activeAccountAvatar = activeAccount.querySelector('.accountAvatar');
+            const activeAccountText = activeAccount.querySelector('.nav-text');
+            
+            activeAccountAvatar.className = `accountAvatar ${newActiveData.color}`;
+            activeAccountAvatar.textContent = newActiveData.initials;
+            activeAccountText.textContent = newActiveData.name;
+            activeAccount.setAttribute('data-tooltip', newActiveData.name);
+            activeAccount.setAttribute('data-account-name', newActiveData.name);
+            activeAccount.setAttribute('data-account-initials', newActiveData.initials);
+            activeAccount.setAttribute('data-account-color', newActiveData.color);
+            
+                         // Update the clicked account with previous active account data (if it's in the account panel)
+             const accountPanel = document.getElementById('accountPanel');
+             const clickedAccountInPanel = Array.from(accountPanel.querySelectorAll('.business-account')).find(item => 
+                 item !== activeAccount && 
+                 item.dataset.accountName === newActiveData.name
+             );
+             
+             if (clickedAccountInPanel) {
+                 const clickedAccountAvatar = clickedAccountInPanel.querySelector('.accountAvatar');
+                 const clickedAccountText = clickedAccountInPanel.querySelector('.nav-text');
+                 
+                 clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+                 clickedAccountAvatar.textContent = currentActiveData.initials;
+                 clickedAccountText.textContent = currentActiveData.name;
+                 clickedAccountInPanel.setAttribute('data-tooltip', currentActiveData.name);
+                 clickedAccountInPanel.setAttribute('data-account-name', currentActiveData.name);
+                 clickedAccountInPanel.setAttribute('data-account-initials', currentActiveData.initials);
+                 clickedAccountInPanel.setAttribute('data-account-color', currentActiveData.color);
+             }
+             
+                          // Note: Account switcher popover now shows accounts within the organization,
+             // so no need to update it here as it's organization-specific
+        }
+
+        // Initialize tooltip system on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const navPanel = document.getElementById('navPanel');
+            const expandButton = document.querySelector('.expandButton-container');
+            const popover = document.getElementById('accountPopover');
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            
+            // Set initial expand button tooltip text
+            if (navPanel.classList.contains('expanded') || navPanel.classList.contains('mobile-open')) {
+                expandButton.setAttribute('data-tooltip', 'Collapse');
+            } else {
+                expandButton.setAttribute('data-tooltip', 'Expand');
+            }
+            
+            // Add tooltip event listeners to all elements with data-tooltip
+            document.querySelectorAll('[data-tooltip]').forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    const tooltipText = this.getAttribute('data-tooltip');
+                    const parentPanel = this.closest('.nav-panel, .account-panel');
+                    
+                    // For navigation components, only show tooltip if panel is not expanded
+                    if (parentPanel) {
+                        if (!parentPanel.classList.contains('expanded') && !parentPanel.classList.contains('mobile-open')) {
+                            showTooltip(this, tooltipText);
+                        }
+                    } else {
+                        // For expand button, always show tooltip
+                        showTooltip(this, tooltipText);
+                    }
+                });
+                
+                element.addEventListener('mouseleave', function(e) {
+                    hideTooltip();
+                });
+            });
+
+            // Handle clicks outside popovers to close them
+            const createPopover = document.getElementById('createPopover');
+            const createTrigger = document.getElementById('createTrigger');
+            const sandboxPopover = document.getElementById('sandboxPopover');
+            const sandboxTrigger = document.getElementById('sandboxTrigger');
+            
+            document.addEventListener('click', function(event) {
+                // Check if click is outside any popover
+                const isOutsideAccount = popover && accountSwitcher && 
+                    !popover.contains(event.target) && !accountSwitcher.contains(event.target);
+                const isOutsideCreate = createPopover && createTrigger && 
+                    !createPopover.contains(event.target) && !createTrigger.contains(event.target);
+                const isOutsideSandbox = sandboxPopover && sandboxTrigger && 
+                    !sandboxPopover.contains(event.target) && !sandboxTrigger.contains(event.target);
+                
+                // Close all popovers if clicking outside all of them
+                if (isOutsideAccount && isOutsideCreate && isOutsideSandbox) {
+                    hideAccountPopover();
+                    hideCreatePopover();
+                    hideSandboxPopover();
+                }
+            });
+
+            // Close popovers when other actions occur and handle expand button
+            if (expandButton) {
+                expandButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    hideAccountPopover();
+                    hideCreatePopover();
+                    hideSandboxPopover();
+                    
+                    // Backup expand functionality in case onclick doesn't work
+                    toggleNavPanel();
+                });
+            }
+
+                         // Initialize account switcher and dashboard based on active organization
+             const currentActiveAccount = document.getElementById('active-account');
+             const initialAccountSwitcher = document.getElementById('accountSwitcher');
+             const dashboardTitle = document.getElementById('dashboardTitle');
+             
+             if (currentActiveAccount && dashboardTitle && initialAccountSwitcher && !isInSandboxMode) {
+                 const businessName = currentActiveAccount.dataset.accountName;
+                 const organizationId = currentActiveAccount.dataset.organization;
+                 const accounts = organizationAccounts[organizationId] || [];
+                 
+                 if (organizationId && accounts.length > 0) {
+                     // It's an organization with accounts - show account switcher
+                     initialAccountSwitcher.style.display = 'flex';
+                     populateAccountSwitcher(organizationId);
+                     dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
+                 } else {
+                     // Not an organization or no accounts - hide account switcher
+                     initialAccountSwitcher.style.display = 'none';
+                     dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">${businessName}</span>`;
+                 }
+             }
+
+            // Handle create popover item clicks
+            document.querySelectorAll('.create-popover-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    console.log('Create action:', this.querySelector('span').textContent);
+                    hideCreatePopover();
+                });
+            });
+
+            // Handle sandbox popover item clicks
+            document.querySelectorAll('.sandbox-popover-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const sandboxName = this.querySelector('span').textContent;
+                    const isAccountAvatar = this.querySelector('.accountAvatar');
+                    const sandboxType = this.getAttribute('data-sandbox-type');
+                    const organizationId = this.getAttribute('data-organization');
+                    const accountName = this.getAttribute('data-account');
+                    
+                    if (isAccountAvatar && sandboxType) {
+                        // This is a sandbox - enter sandbox mode
+                        enterSandboxMode(sandboxName, sandboxType, organizationId, accountName);
+                        console.log('Entered sandbox mode:', sandboxName, 'Type:', sandboxType);
+                    } else {
+                        // This is another action (Create, Manage sandboxes)
+                        console.log('Sandbox action:', sandboxName);
+                    }
+                    
+                    hideSandboxPopover();
+                });
+            });
+        });
+
+        // Hide tooltip on window resize
+        window.addEventListener('resize', function() {
+            hideTooltip();
+        });
+
+        // Create new sandbox function
+        function createNewSandbox() {
+            const sandboxName = prompt('Enter sandbox name:');
+            if (sandboxName && window.dashboard) {
+                const sandbox = window.dashboard.createSandbox(sandboxName);
+                if (sandbox) {
+                    console.log('Created sandbox:', sandboxName);
+                    // Optionally show a success message
+                    alert(`Created sandbox: ${sandboxName}`);
+                }
+            }
+            hideSandboxPopover();
+        }
+
+        // Manage sandboxes function
+        function manageSandboxes() {
+            console.log('Managing sandboxes...');
+            // In a real implementation, this would open a management interface
+            alert('Sandbox management interface would open here');
+            hideSandboxPopover();
+        }
+
+        // Update the existing sandbox popover item click handler to work with new structure
+        document.addEventListener('DOMContentLoaded', function() {
+            // Re-run the sandbox popover initialization after dashboard.js loads
+            setTimeout(() => {
+                // Handle dynamically created sandbox popover item clicks
+                document.getElementById('sandbox-popover-content').addEventListener('click', function(e) {
+                    const sandboxItem = e.target.closest('.sandbox-popover-item');
+                    if (sandboxItem && sandboxItem.hasAttribute('data-sandbox-type')) {
+                        const sandboxName = sandboxItem.querySelector('span').textContent;
+                        const sandboxType = sandboxItem.getAttribute('data-sandbox-type');
+                        const organizationId = sandboxItem.getAttribute('data-organization');
+                        const accountName = sandboxItem.getAttribute('data-account');
+                        
+                        // Enter sandbox mode
+                        enterSandboxMode(sandboxName, sandboxType, organizationId, accountName);
+                        console.log('Entered sandbox mode:', sandboxName, 'Type:', sandboxType);
+                        hideSandboxPopover();
+                    }
+                });
+
+                // Update sandbox status indicator
+                function updateSandboxStatus() {
+                    const statusText = document.getElementById('sandboxStatusText');
+                    const activeAccount = document.getElementById('active-account');
+                    
+                    if (statusText && activeAccount && window.dashboard) {
+                        const accountName = activeAccount.dataset.accountName;
+                        const stats = window.dashboard.getAccountStats(accountName);
+                        statusText.innerHTML = `Account-specific sandboxes active for "${accountName}" (${stats.totalSandboxes} sandboxes)`;
+                    } else {
+                        statusText.innerHTML = 'Initializing...';
+                    }
+                }
+
+                // Initial status update
+                updateSandboxStatus();
+                updateNavPanelStatus();
+
+                // Watch for account changes and update status
+                const activeAccount = document.getElementById('active-account');
+                if (activeAccount) {
+                    const observer = new MutationObserver(() => {
+                        setTimeout(updateSandboxStatus, 100);
+                    });
+                    observer.observe(activeAccount, {
+                        attributes: true,
+                        attributeFilter: ['data-account-name']
+                    });
+                }
+            }, 100);
+        });
+    </script>
+    
+    <!-- Load the updated dashboard.js -->
+    <script src="dashboard.js"></script>
+</body>
+</html> 
