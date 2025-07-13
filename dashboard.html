@@ -1072,6 +1072,22 @@
                             </button>
 
                         </div>
+                        
+                        <!-- Sandbox Management Section -->
+                        <div style="margin-top: 24px;">
+                            <h3 style="margin-bottom: 16px; font-size: 18px; color: #2c3e50;">Sandboxes</h3>
+                            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                <button onclick="createNewSandbox('account')" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    Create Account Sandbox
+                                </button>
+                                <button onclick="createNewSandbox('organization')" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    Create Organization Sandbox
+                                </button>
+                            </div>
+                            <div id="sandbox-list">
+                                <!-- Sandboxes will be populated here by JavaScript -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2023,14 +2039,14 @@
         });
 
         // Create new sandbox function
-        function createNewSandbox() {
-            const sandboxName = prompt('Enter sandbox name:');
+        function createNewSandbox(type = 'account') {
+            const sandboxName = prompt(`Enter ${type} sandbox name:`);
             if (sandboxName && window.dashboard) {
-                const sandbox = window.dashboard.createSandbox(sandboxName);
+                const sandbox = window.dashboard.createSandbox(sandboxName, type);
                 if (sandbox) {
-                    console.log('Created sandbox:', sandboxName);
+                    console.log('Created sandbox:', sandboxName, 'Type:', type);
                     // Optionally show a success message
-                    alert(`Created sandbox: ${sandboxName}`);
+                    alert(`Created ${type} sandbox: ${sandboxName}`);
                 }
             }
             hideSandboxPopover();

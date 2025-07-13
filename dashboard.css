@@ -238,3 +238,208 @@ body {
     outline: 2px solid #007AFF;
     outline-offset: 2px;
 } 
+
+/* Sandbox Container Styles */
+#sandbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Sandbox Item Styles */
+.sandbox-item {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    opacity: 0;
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+.sandbox-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.sandbox-item.organization {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+    border-color: #b8daff;
+}
+
+.sandbox-item.account {
+    background: linear-gradient(135deg, #fff8f0 0%, #ffeaa7 100%);
+    border-color: #ffd93d;
+}
+
+/* Sandbox Header */
+.sandbox-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sandbox-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sandbox-icon.organization-icon {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.sandbox-icon.account-icon {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.sandbox-info {
+    flex: 1;
+}
+
+.sandbox-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.sandbox-meta {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Sandbox Accounts Display */
+.sandbox-accounts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.mini-account-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+}
+
+.account-count {
+    font-size: 11px;
+    color: #6c757d;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* Sandbox Actions */
+.sandbox-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.enter-sandbox-btn, .delete-sandbox-btn {
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.enter-sandbox-btn {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.enter-sandbox-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.delete-sandbox-btn {
+    background: transparent;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.delete-sandbox-btn:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* Color Classes for Account Avatars */
+.color-1 { background: #007bff; }
+.color-2 { background: #28a745; }
+.color-3 { background: #ffc107; }
+.color-4 { background: #dc3545; }
+.color-5 { background: #6f42c1; }
+.color-6 { background: #fd7e14; }
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sandbox-item {
+        padding: 12px;
+    }
+    
+    .sandbox-header {
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .sandbox-icon {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .sandbox-name {
+        font-size: 13px;
+    }
+    
+    .sandbox-meta {
+        font-size: 11px;
+    }
+    
+    .sandbox-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .enter-sandbox-btn, .delete-sandbox-btn {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+} 
