@@ -210,24 +210,34 @@ class Dashboard {
             });
         }
 
-        // Get account sandboxes
-        const accountSandboxes = this.getSandboxesForAccount(accountName);
+        // Determine current viewing context (organization vs specific account)
+        const accountSwitcherText = document.getElementById('accountSwitcherText');
+        const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
         
         // Check if current account belongs to an organization
         const activeAccountElement = document.getElementById('active-account');
         const organizationId = activeAccountElement ? activeAccountElement.dataset.organization : null;
         
-        let organizationSandboxes = [];
-        if (organizationId) {
-            organizationSandboxes = this.getOrganizationSandboxesForOrganization(organizationId);
+        let sandboxesToShow = [];
+        
+        if (isViewingAllAccounts && organizationId) {
+            // Show only organization sandboxes when viewing "All accounts"
+            sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
+            console.log('Showing organization sandboxes for:', organizationId);
+        } else if (!isViewingAllAccounts && accountSwitcherText) {
+            // Show account sandboxes for the specific selected account
+            const specificAccountName = accountSwitcherText.textContent;
+            sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
+            console.log('Showing account sandboxes for:', specificAccountName);
+        } else {
+            // Fallback: show account sandboxes for the main account
+            sandboxesToShow = this.getSandboxesForAccount(accountName);
+            console.log('Showing fallback account sandboxes for:', accountName);
         }
-
-        // Combine and display all sandboxes
-        const allSandboxes = [...accountSandboxes, ...organizationSandboxes];
         
         // Populate main container
         if (container) {
-            allSandboxes.forEach((sandbox, index) => {
+            sandboxesToShow.forEach((sandbox, index) => {
                 const sandboxItem = this.createSandboxItem(sandbox, index);
                 container.appendChild(sandboxItem);
             });
@@ -238,7 +248,7 @@ class Dashboard {
         
         // Populate sandbox popover
         if (popoverContent) {
-            allSandboxes.forEach((sandbox, index) => {
+            sandboxesToShow.forEach((sandbox, index) => {
                 const sandboxPopoverItem = this.createSandboxPopoverItem(sandbox, index);
                 
                 // Insert before the divider (if it exists)
@@ -254,7 +264,7 @@ class Dashboard {
             this.updatePopoverAnimationDelays(popoverContent);
         }
         
-        console.log(`Updated sandbox list for account: ${accountName}`, allSandboxes);
+        console.log(`Updated sandbox list - Context: ${isViewingAllAccounts ? 'Organization' : 'Account'}, Sandboxes:`, sandboxesToShow);
     }
 
     // Create a sandbox item element for the main list

@@ -1117,7 +1117,7 @@
         <div class="sandbox-popover-content" id="sandbox-popover-content">
             <!-- Account-specific sandboxes will be dynamically populated here -->
             <div class="sandbox-popover-divider"></div>
-            <div class="sandbox-popover-item" onclick="createNewSandbox('account')">
+            <div id="createAccountSandbox" class="sandbox-popover-item" onclick="createNewSandbox('account')">
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 24 24" width="16" height="16">
@@ -1125,9 +1125,9 @@
                         </svg>
                     </div>
                 </div>
-                <span>Create Account Sandbox</span>
+                <span>Create Sandbox</span>
             </div>
-            <div class="sandbox-popover-item" onclick="createNewSandbox('organization')">
+            <div id="createOrgSandbox" class="sandbox-popover-item" onclick="createNewSandbox('organization')" style="display: none;">
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 24 24" width="16" height="16">
@@ -1698,7 +1698,17 @@
                      accountSubtitle.textContent = `All accounts (${accounts.length})`;
                  }
                  
-                 console.log('All accounts selected');
+                 // Update sandboxes to show organization sandboxes
+                 if (window.dashboard) {
+                     const currentActiveAccount = document.getElementById('active-account');
+                     const accountName = currentActiveAccount ? currentActiveAccount.dataset.accountName : null;
+                     window.dashboard.updateSandboxesForAccount(accountName);
+                 }
+                 
+                 // Update popover create buttons for organization context
+                 updateSandboxPopoverButtons();
+                 
+                 console.log('All accounts selected - showing organization sandboxes');
                  hideAccountPopover();
              });
              
@@ -1744,7 +1754,17 @@
                          accountSubtitle.textContent = selectedAccountName;
                      }
                      
-                     console.log('Account selected:', selectedAccountName);
+                     // Update sandboxes to show account-specific sandboxes
+                     if (window.dashboard) {
+                         const currentActiveAccount = document.getElementById('active-account');
+                         const organizationAccountName = currentActiveAccount ? currentActiveAccount.dataset.accountName : null;
+                         window.dashboard.updateSandboxesForAccount(organizationAccountName);
+                     }
+                     
+                     // Update popover create buttons for account context
+                     updateSandboxPopoverButtons();
+                     
+                     console.log('Account selected:', selectedAccountName, '- showing account sandboxes');
                      hideAccountPopover();
                  });
              });
@@ -1990,6 +2010,9 @@
                      initialAccountSwitcher.style.display = 'none';
                      dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">${businessName}</span>`;
                  }
+                 
+                 // Initialize sandbox popover buttons based on current context
+                 updateSandboxPopoverButtons();
              }
 
             // Handle create popover item clicks
@@ -2028,15 +2051,57 @@
             hideTooltip();
         });
 
-        // Create new sandbox function
+        // Update sandbox popover create buttons based on current context
+        function updateSandboxPopoverButtons() {
+            const accountSwitcherText = document.getElementById('accountSwitcherText');
+            const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+            
+            const createAccountBtn = document.getElementById('createAccountSandbox');
+            const createOrgBtn = document.getElementById('createOrgSandbox');
+            
+            if (createAccountBtn && createOrgBtn) {
+                if (isViewingAllAccounts) {
+                    // Viewing organization level - show create organization sandbox button
+                    createAccountBtn.style.display = 'none';
+                    createOrgBtn.style.display = 'flex';
+                    createOrgBtn.querySelector('span').textContent = 'Create Organization Sandbox';
+                } else {
+                    // Viewing specific account - show create account sandbox button
+                    createAccountBtn.style.display = 'flex';
+                    createOrgBtn.style.display = 'none';
+                    
+                    const specificAccountName = accountSwitcherText ? accountSwitcherText.textContent : 'Account';
+                    createAccountBtn.querySelector('span').textContent = `Create ${specificAccountName} Sandbox`;
+                }
+            }
+        }
+
+        // Create new sandbox function - context aware
         function createNewSandbox(type = 'account') {
-            const sandboxName = prompt(`Enter ${type} sandbox name:`);
+            // Determine current context
+            const accountSwitcherText = document.getElementById('accountSwitcherText');
+            const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+            
+            // Override type based on context for better UX
+            let contextualType = type;
+            if (isViewingAllAccounts) {
+                contextualType = 'organization';
+            } else if (type === 'organization' && !isViewingAllAccounts) {
+                // If trying to create org sandbox while viewing specific account, ask for confirmation
+                const confirmOrgSandbox = confirm('You are currently viewing a specific account. Do you want to create an organization-wide sandbox instead?');
+                if (!confirmOrgSandbox) {
+                    contextualType = 'account';
+                }
+            }
+            
+            const sandboxName = prompt(`Enter ${contextualType} sandbox name:`);
             if (sandboxName && window.dashboard) {
-                const sandbox = window.dashboard.createSandbox(sandboxName, type);
+                const sandbox = window.dashboard.createSandbox(sandboxName, contextualType);
                 if (sandbox) {
-                    console.log('Created sandbox:', sandboxName, 'Type:', type);
-                    // Optionally show a success message
-                    alert(`Created ${type} sandbox: ${sandboxName}`);
+                    console.log('Created sandbox:', sandboxName, 'Type:', contextualType, 'Context:', isViewingAllAccounts ? 'Organization' : 'Account');
+                    // Show context-aware success message
+                    const contextMessage = isViewingAllAccounts ? 'organization-wide' : 'account-specific';
+                    alert(`Created ${contextualType} sandbox: ${sandboxName} (${contextMessage})`);
                 }
             }
             hideSandboxPopover();
