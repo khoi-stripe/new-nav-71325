@@ -1823,15 +1823,17 @@
              });
         }
 
-        // Populate account switcher popover with organization sandboxes (for organization sandbox mode)
+        // Populate account switcher popover with mirrored accounts (for organization sandbox mode)
         function populateAccountSwitcherForOrgSandbox(organizationId) {
             const accountPopoverContent = document.getElementById('account-popover-content');
             
             // Clear existing content
             accountPopoverContent.innerHTML = '';
             
-            // Get organization sandboxes
+            // Get the current organization sandbox to access its mirrored accounts
             const orgSandboxes = window.dashboard ? window.dashboard.getOrganizationSandboxesForOrganization(organizationId) : [];
+            const currentOrgSandbox = orgSandboxes.find(sandbox => sandbox.name === activeSandboxName);
+            const mirroredAccounts = currentOrgSandbox ? currentOrgSandbox.accounts : organizationAccounts[organizationId] || [];
             
             // Add "All accounts" header (selected by default)
             const allAccountsItem = document.createElement('div');
@@ -1872,8 +1874,7 @@
                 // Update dashboard title
                 const dashboardTitle = document.getElementById('dashboardTitle');
                 if (dashboardTitle) {
-                    const accounts = organizationAccounts[organizationId] || [];
-                    dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - All accounts (${accounts.length})</span>`;
+                    dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - All accounts (${mirroredAccounts.length})</span>`;
                 }
                 
                 console.log('All accounts selected in organization sandbox mode');
@@ -1882,26 +1883,23 @@
             
             accountPopoverContent.appendChild(allAccountsItem);
             
-            // Add organization sandboxes
-            orgSandboxes.forEach((sandbox, index) => {
-                const sandboxItem = document.createElement('div');
-                sandboxItem.className = 'account-popover-item sandbox-item';
-                sandboxItem.setAttribute('data-sandbox-name', sandbox.name);
-                sandboxItem.setAttribute('data-sandbox-type', sandbox.type);
+            // Add mirrored accounts from the organization sandbox
+            mirroredAccounts.forEach((account, index) => {
+                const accountItem = document.createElement('div');
+                accountItem.className = 'account-popover-item account';
+                accountItem.setAttribute('data-account-name', account.name);
+                accountItem.setAttribute('data-account-initials', account.initials);
+                accountItem.setAttribute('data-account-color', account.color);
                 
-                // Generate initials from sandbox name
-                const initials = sandbox.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
-                const colorClass = `color-${(index % 6) + 1}`;
-                
-                sandboxItem.innerHTML = `
+                accountItem.innerHTML = `
                     <div class="icon">
-                        <div class="accountAvatar ${colorClass}">${initials}</div>
+                        <div class="accountAvatar ${account.color}">${account.initials}</div>
                     </div>
-                    <span>${sandbox.name}</span>
+                    <span>${account.name} (sandbox)</span>
                 `;
                 
-                // Add click handler for sandbox selection
-                sandboxItem.addEventListener('click', function() {
+                // Add click handler for mirrored account selection
+                accountItem.addEventListener('click', function() {
                     // Remove selected class from all items
                     accountPopoverContent.querySelectorAll('.account-popover-item').forEach(item => {
                         item.classList.remove('selected');
@@ -1909,25 +1907,25 @@
                     // Add selected class to this item
                     this.classList.add('selected');
                     
-                    // Update account switcher to show selected sandbox name
+                    // Update account switcher to show selected account name
                     const accountSwitcher = document.getElementById('accountSwitcher');
                     const accountSwitcherText = document.getElementById('accountSwitcherText');
-                    const selectedSandboxName = this.querySelector('span').textContent;
+                    const selectedAccountName = account.name;
                     
-                    accountSwitcher.setAttribute('data-tooltip', selectedSandboxName);
-                    accountSwitcherText.textContent = selectedSandboxName;
+                    accountSwitcher.setAttribute('data-tooltip', `${selectedAccountName} (sandbox)`);
+                    accountSwitcherText.textContent = `${selectedAccountName} (sandbox)`;
                     
                     // Update dashboard title
                     const dashboardTitle = document.getElementById('dashboardTitle');
                     if (dashboardTitle) {
-                        dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - ${selectedSandboxName}</span>`;
+                        dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - ${selectedAccountName}</span>`;
                     }
                     
-                    console.log('Organization sandbox selected:', selectedSandboxName);
+                    console.log('Mirrored account selected:', selectedAccountName);
                     hideAccountPopover();
                 });
                 
-                accountPopoverContent.appendChild(sandboxItem);
+                accountPopoverContent.appendChild(accountItem);
             });
             
             // Add animation delays to all items
