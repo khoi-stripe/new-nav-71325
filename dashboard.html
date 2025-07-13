@@ -220,6 +220,20 @@
         .account-popover-item .icon {
             margin-right: 8px;
         }
+        
+        /* Sandbox items in account popover */
+        .account-popover-item.sandbox-item {
+            border-left: 3px solid #533AFD;
+            background: rgba(83, 58, 253, 0.05);
+        }
+        
+        .account-popover-item.sandbox-item:hover {
+            background: rgba(83, 58, 253, 0.1);
+        }
+        
+        .account-popover-item.sandbox-item.selected {
+            background: rgba(83, 58, 253, 0.15);
+        }
 
         .account-popover-divider {
             height: 1px;
@@ -1531,8 +1545,8 @@
                         toggleAccountPopover(this);
                     };
                     
-                    // Populate account switcher with organization's accounts
-                    populateAccountSwitcher(organizationId);
+                    // Populate account switcher with organization's sandboxes
+                    populateAccountSwitcherForOrgSandbox(organizationId);
                 }
             } else {
                 // For account sandboxes, show exit button
@@ -1775,6 +1789,119 @@
              });
         }
 
+        // Populate account switcher popover with organization sandboxes (for organization sandbox mode)
+        function populateAccountSwitcherForOrgSandbox(organizationId) {
+            const accountPopoverContent = document.getElementById('account-popover-content');
+            
+            // Clear existing content
+            accountPopoverContent.innerHTML = '';
+            
+            // Get organization sandboxes
+            const orgSandboxes = window.dashboard ? window.dashboard.getOrganizationSandboxesForOrganization(organizationId) : [];
+            
+            // Add "All accounts" header (selected by default)
+            const allAccountsItem = document.createElement('div');
+            allAccountsItem.className = 'account-popover-item selected';
+            allAccountsItem.innerHTML = `
+                <div class="icon">
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l8-4v18"/>
+                            <path d="M19 21V11l-6-4"/>
+                            <path d="M9 9v.01"/>
+                            <path d="M9 12v.01"/>
+                            <path d="M9 15v.01"/>
+                            <path d="M9 18v.01"/>
+                        </svg>
+                    </div>
+                </div>
+                <span>All accounts</span>
+            `;
+            
+            // Add click handler for "All accounts"
+            allAccountsItem.addEventListener('click', function() {
+                // Remove selected class from all items
+                accountPopoverContent.querySelectorAll('.account-popover-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                // Add selected class to this item
+                this.classList.add('selected');
+                
+                // Update account switcher to show "All accounts"
+                const accountSwitcher = document.getElementById('accountSwitcher');
+                const accountSwitcherText = document.getElementById('accountSwitcherText');
+                
+                accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                accountSwitcherText.textContent = 'All accounts';
+                
+                // Update dashboard title
+                const dashboardTitle = document.getElementById('dashboardTitle');
+                if (dashboardTitle) {
+                    const accounts = organizationAccounts[organizationId] || [];
+                    dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - All accounts (${accounts.length})</span>`;
+                }
+                
+                console.log('All accounts selected in organization sandbox mode');
+                hideAccountPopover();
+            });
+            
+            accountPopoverContent.appendChild(allAccountsItem);
+            
+            // Add organization sandboxes
+            orgSandboxes.forEach((sandbox, index) => {
+                const sandboxItem = document.createElement('div');
+                sandboxItem.className = 'account-popover-item sandbox-item';
+                sandboxItem.setAttribute('data-sandbox-name', sandbox.name);
+                sandboxItem.setAttribute('data-sandbox-type', sandbox.type);
+                
+                // Generate initials from sandbox name
+                const initials = sandbox.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+                const colorClass = `color-${(index % 6) + 1}`;
+                
+                sandboxItem.innerHTML = `
+                    <div class="icon">
+                        <div class="accountAvatar ${colorClass}">${initials}</div>
+                    </div>
+                    <span>${sandbox.name}</span>
+                `;
+                
+                // Add click handler for sandbox selection
+                sandboxItem.addEventListener('click', function() {
+                    // Remove selected class from all items
+                    accountPopoverContent.querySelectorAll('.account-popover-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    // Add selected class to this item
+                    this.classList.add('selected');
+                    
+                    // Update account switcher to show selected sandbox name
+                    const accountSwitcher = document.getElementById('accountSwitcher');
+                    const accountSwitcherText = document.getElementById('accountSwitcherText');
+                    const selectedSandboxName = this.querySelector('span').textContent;
+                    
+                    accountSwitcher.setAttribute('data-tooltip', selectedSandboxName);
+                    accountSwitcherText.textContent = selectedSandboxName;
+                    
+                    // Update dashboard title
+                    const dashboardTitle = document.getElementById('dashboardTitle');
+                    if (dashboardTitle) {
+                        dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - ${selectedSandboxName}</span>`;
+                    }
+                    
+                    console.log('Organization sandbox selected:', selectedSandboxName);
+                    hideAccountPopover();
+                });
+                
+                accountPopoverContent.appendChild(sandboxItem);
+            });
+            
+            // Add animation delays to all items
+            accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
+                item.style.animationDelay = `${(index + 1) * 0.05}s`;
+            });
+        }
+
         // Update active business account function with account switcher update
         function updateActiveBusinessAccount(businessAccountItem) {
             const activeAccount = document.getElementById('active-account');
@@ -1860,6 +1987,14 @@
                      dashboardTitle.innerHTML = `${newActiveData.name} dashboard<br><span id="accountSubtitle">${newActiveData.name}</span>`;
                  }
              }
+             
+             // Update sandbox popover buttons and sandboxes for the new account
+             updateSandboxPopoverButtons();
+             
+             // Update sandboxes for the new account
+             if (window.dashboard) {
+                 window.dashboard.updateSandboxesForAccount(newActiveData.name);
+             }
         }
 
         // Update active account function with position swapping
@@ -1919,6 +2054,11 @@
              
                           // Note: Account switcher popover now shows accounts within the organization,
              // so no need to update it here as it's organization-specific
+             
+             // Update sandboxes for the new account
+             if (window.dashboard) {
+                 window.dashboard.updateSandboxesForAccount(newActiveData.name);
+             }
         }
 
         // Initialize tooltip system on page load
