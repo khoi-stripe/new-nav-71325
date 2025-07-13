@@ -193,10 +193,22 @@ class Dashboard {
     // Update sandboxes display for current account
     updateSandboxesForAccount(accountName) {
         const container = document.getElementById('sandbox-list');
-        if (!container) return;
-
-        // Clear existing items
-        container.innerHTML = '';
+        const popoverContent = document.getElementById('sandbox-popover-content');
+        
+        if (container) {
+            // Clear existing items in main container
+            container.innerHTML = '';
+        }
+        
+        if (popoverContent) {
+            // Clear existing sandbox items from popover (keep create and manage items)
+            const existingItems = popoverContent.querySelectorAll('.sandbox-popover-item');
+            existingItems.forEach(item => {
+                if (item.querySelector('.accountAvatar')) {
+                    item.remove();
+                }
+            });
+        }
 
         // Get account sandboxes
         const accountSandboxes = this.getSandboxesForAccount(accountName);
@@ -213,16 +225,39 @@ class Dashboard {
         // Combine and display all sandboxes
         const allSandboxes = [...accountSandboxes, ...organizationSandboxes];
         
-        allSandboxes.forEach((sandbox, index) => {
-            const sandboxItem = this.createSandboxItem(sandbox, index);
-            container.appendChild(sandboxItem);
-        });
-
-        // Update animation delays
-        this.updateAnimationDelays(container);
+        // Populate main container
+        if (container) {
+            allSandboxes.forEach((sandbox, index) => {
+                const sandboxItem = this.createSandboxItem(sandbox, index);
+                container.appendChild(sandboxItem);
+            });
+            
+            // Update animation delays
+            this.updateAnimationDelays(container);
+        }
+        
+        // Populate sandbox popover
+        if (popoverContent) {
+            allSandboxes.forEach((sandbox, index) => {
+                const sandboxPopoverItem = this.createSandboxPopoverItem(sandbox, index);
+                
+                // Insert before the divider (if it exists)
+                const divider = popoverContent.querySelector('.sandbox-popover-divider');
+                if (divider) {
+                    popoverContent.insertBefore(sandboxPopoverItem, divider);
+                } else {
+                    popoverContent.appendChild(sandboxPopoverItem);
+                }
+            });
+            
+            // Update animation delays for popover
+            this.updatePopoverAnimationDelays(popoverContent);
+        }
+        
+        console.log(`Updated sandbox list for account: ${accountName}`, allSandboxes);
     }
 
-    // Create a sandbox item element
+    // Create a sandbox item element for the main list
     createSandboxItem(sandbox, index) {
         const item = document.createElement('div');
         item.className = `sandbox-item ${sandbox.type}`;
@@ -292,11 +327,46 @@ class Dashboard {
         return item;
     }
 
+    // Create a sandbox item element for the popover
+    createSandboxPopoverItem(sandbox, index) {
+        const sandboxItem = document.createElement('div');
+        sandboxItem.className = 'sandbox-popover-item';
+        sandboxItem.setAttribute('data-sandbox-type', sandbox.type);
+        sandboxItem.setAttribute('data-organization', sandbox.organizationId || '');
+        sandboxItem.setAttribute('data-account', sandbox.account || '');
+        
+        // Generate initials from sandbox name
+        const initials = sandbox.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+        const colorClass = sandbox.type === 'organization' ? 'color-1' : `color-${(index % 6) + 1}`;
+        
+        sandboxItem.innerHTML = `
+            <div class="icon">
+                <div class="accountAvatar ${colorClass}">${initials}</div>
+            </div>
+            <span>${sandbox.name}</span>
+        `;
+
+        // Add click handler for sandbox selection
+        sandboxItem.addEventListener('click', () => {
+            this.enterSandboxMode(sandbox);
+        });
+
+        return sandboxItem;
+    }
+
     // Update animation delays for items
     updateAnimationDelays(container) {
         const items = container.querySelectorAll('.sandbox-item');
         items.forEach((item, index) => {
             item.style.animationDelay = `${index * 0.1}s`;
+        });
+    }
+
+    // Update animation delays for popover items
+    updatePopoverAnimationDelays(container) {
+        const items = container.querySelectorAll('.sandbox-popover-item');
+        items.forEach((item, index) => {
+            item.style.animationDelay = `${(index + 1) * 0.05}s`;
         });
     }
 
@@ -327,8 +397,20 @@ class Dashboard {
             }
         }
 
+        // Close sandbox popover if it's open
+        if (typeof window.hideSandboxPopover === 'function') {
+            window.hideSandboxPopover();
+        }
+
+        // Call the global enterSandboxMode function if it exists
+        if (typeof window.enterSandboxMode === 'function') {
+            window.enterSandboxMode(sandbox.name, sandbox.type, sandbox.organizationId, sandbox.account);
+        }
+
         // Update UI to show sandbox mode
         this.updateSandboxesForAccount(this.currentActiveAccount);
+        
+        console.log('Entered sandbox mode:', sandbox.name, 'for account:', sandbox.account || 'organization');
     }
 
     // Create a new sandbox for the current account
