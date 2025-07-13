@@ -27,12 +27,12 @@ class Dashboard {
             }
         });
 
-        // Close panels when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.nav-panel')) {
-                this.closeAllPanels();
-            }
-        });
+        // Close panels when clicking outside (disabled for dashboard.html compatibility)
+        // document.addEventListener('click', (e) => {
+        //     if (!e.target.closest('.nav-panel')) {
+        //         this.closeAllPanels();
+        //     }
+        // });
 
         // Initialize account tracking
         this.initializeAccountTracking();
@@ -316,28 +316,29 @@ class Dashboard {
     }
 
     animatePanel(panel, isExpanding) {
-        const content = panel.querySelector('.panel-content');
-        const title = panel.querySelector('.panel-title');
-        const navTexts = panel.querySelectorAll('.nav-text');
-        const dropdownIcon = panel.querySelector('.dropdown-icon');
+        // Animation disabled for dashboard.html - uses CSS transitions instead
+        // const content = panel.querySelector('.panel-content');
+        // const title = panel.querySelector('.panel-title');
+        // const navTexts = panel.querySelectorAll('.nav-text');
+        // const dropdownIcon = panel.querySelector('.dropdown-icon');
 
-        if (isExpanding) {
-            // Expanding animation
-            setTimeout(() => {
-                if (title) title.style.opacity = '1';
-                if (dropdownIcon) dropdownIcon.style.opacity = '1';
-                navTexts.forEach(text => {
-                    text.style.opacity = '1';
-                });
-            }, 100);
-        } else {
-            // Collapsing animation
-            if (title) title.style.opacity = '0';
-            if (dropdownIcon) dropdownIcon.style.opacity = '0';
-            navTexts.forEach(text => {
-                text.style.opacity = '0';
-            });
-        }
+        // if (isExpanding) {
+        //     // Expanding animation
+        //     setTimeout(() => {
+        //         if (title) title.style.opacity = '1';
+        //         if (dropdownIcon) dropdownIcon.style.opacity = '1';
+        //         navTexts.forEach(text => {
+        //             text.style.opacity = '1';
+        //         });
+        //     }, 100);
+        // } else {
+        //     // Collapsing animation
+        //     if (title) title.style.opacity = '0';
+        //     if (dropdownIcon) dropdownIcon.style.opacity = '0';
+        //     navTexts.forEach(text => {
+        //         text.style.opacity = '0';
+        //     });
+        // }
     }
 }
 
