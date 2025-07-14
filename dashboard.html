@@ -766,118 +766,6 @@
             margin-bottom: 16px;
         }
 
-        /* Sandbox Section */
-        .sandbox-section {
-            margin-bottom: 24px;
-            padding: 0 16px;
-        }
-
-        .sandbox-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .sandbox-header-text {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .sandbox-business-account {
-            font-size: 12px;
-            font-weight: 600;
-            color: #333;
-            opacity: 0.8;
-        }
-
-        .sandbox-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-        }
-
-        .sandbox-count {
-            background: #f0f0f0;
-            color: #666;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 12px;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        .sandbox-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .sandbox-item {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 13px;
-        }
-
-        .sandbox-item:hover {
-            background: #e9ecef;
-            border-color: #007bff;
-        }
-
-        .sandbox-item.organization {
-            background: linear-gradient(135deg, #e8f2ff 0%, #cce7ff 100%);
-            border-color: #b8daff;
-        }
-
-        .sandbox-item.account {
-            background: linear-gradient(135deg, #fff8f0 0%, #ffe8cc 100%);
-            border-color: #ffd93d;
-        }
-
-        .sandbox-item-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .sandbox-item-meta {
-            font-size: 11px;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sandbox-type-badge {
-            background: #e9ecef;
-            color: #495057;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .sandbox-type-badge.organization {
-            background: #cce7ff;
-            color: #0056b3;
-        }
-
-        .sandbox-type-badge.account {
-            background: #ffe8cc;
-            color: #cc7a00;
-        }
-
         /* Sandbox Mode Indicator Bar */
         .sandbox-indicator-bar {
             position: fixed;
@@ -1290,20 +1178,6 @@
                         <svg viewBox="0 0 24 24" width="16" height="16">
                             <path d="M6 9l6 6 6-6"/>
                     </svg>
-                    </div>
-                </div>
-                
-                <!-- Sandbox Section -->
-                <div class="sandbox-section" id="sandboxSection">
-                    <div class="sandbox-header">
-                        <div class="sandbox-header-text">
-                            <span class="sandbox-business-account" id="sandboxBusinessAccount">Acme, Inc.</span>
-                            <span class="sandbox-label">Sandboxes</span>
-                        </div>
-                        <div class="sandbox-count" id="sandboxCount">4</div>
-                    </div>
-                    <div class="sandbox-list" id="sandbox-list">
-                        <!-- Sandboxes will be populated here by JavaScript -->
                     </div>
                 </div>
                 
