@@ -22,6 +22,7 @@
             display: flex;
             height: 100vh;
             background-color: #f5f5f5;
+            overflow: visible;
         }
 
         /* Left Navigation Panels */
@@ -30,7 +31,7 @@
             width: 65px;
             height: 100vh;
             padding: 16px 20px;
-            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1), margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             position: relative;
             display: flex;
             flex-direction: column;
@@ -39,7 +40,7 @@
         }
 
         .nav-panel {
-            overflow: hidden;
+            overflow: visible;
         }
 
         .account-panel {
@@ -229,7 +230,7 @@
             transform: translateY(-50%);
             width: 16px;
             height: 16px;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23533AFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
             background-size: contain;
             background-repeat: no-repeat;
         }
@@ -266,7 +267,7 @@
             transform: translateY(-50%);
             width: 16px;
             height: 16px;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23533AFD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
             background-size: contain;
             background-repeat: no-repeat;
         }
@@ -484,7 +485,7 @@
         .nav-component {
             display: flex;
             align-items: center;
-            padding: 4px 2px;
+            padding: 4px 0;
             margin: 0;
             cursor: pointer;
             transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -494,26 +495,26 @@
             border-radius: 6px;
         }
 
-        /* Add horizontal padding only when panels are expanded */
-        .nav-panel.expanded .nav-component,
-        .account-panel.expanded .nav-component {
-            padding: 4px 8px 4px 2px;
-        }
 
 
-
-        /* Hover State */
-        .nav-component:hover,
-        .nav-component.popover-active {
+        /* Hover State - Base for all nav components */
+        .nav-component:hover::before,
+        .nav-component.popover-active::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            bottom: -4px;
+            left: -8px;
             background-color: #F5F6F8;
             border-radius: 8px;
+            z-index: -1;
         }
 
-        /* Darker hover state for account panel nav items */
-        .account-panel .nav-component:hover,
-        .account-panel .nav-component.popover-active {
+        /* Account panel hover - darker background */
+        .account-panel .nav-component:hover::before,
+        .account-panel .nav-component.popover-active::before {
             background-color: #e9ecef;
-            border-radius: 8px;
         }
 
         /* Active State - Only for nav-panel items */
@@ -599,6 +600,14 @@
         .accountAvatar.color-5 { background-color: #3B82F6; }
         .accountAvatar.color-6 { background-color: #EC4899; }
 
+        /* Account subtitle colors to match account icon colors */
+        .account-subtitle-color-1 { color: #8B5CF6; }
+        .account-subtitle-color-2 { color: #EF4444; }
+        .account-subtitle-color-3 { color: #10B981; }
+        .account-subtitle-color-4 { color: #F59E0B; }
+        .account-subtitle-color-5 { color: #3B82F6; }
+        .account-subtitle-color-6 { color: #EC4899; }
+
         /* Active Account Stroke */
         .active-account-stroke {
             position: absolute;
@@ -645,8 +654,8 @@
             width: 16px !important;
             height: 16px !important;
             fill: none;
-            stroke: currentColor;
-            stroke-width: 1.5;
+            stroke: #474E5A;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
@@ -696,11 +705,17 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 120px; /* Limit width when panel is closed */
+            font-weight: 500; /* Medium font weight */
         }
 
         /* When panel is expanded, allow full width */
         .nav-panel.expanded #accountSwitcherText {
             max-width: none;
+        }
+
+        /* Add space below account switcher */
+        #accountSwitcher {
+            margin-bottom: 16px;
         }
 
         /* Sandbox Mode Indicator Bar */
@@ -772,7 +787,7 @@
         .nav-divider {
             height: 1px;
             background-color: #e0e0e0;
-            margin: 8px 0;
+            margin: 7.5px 0;
             width: 100%;
         }
 
@@ -800,6 +815,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            transition: margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         .header {
@@ -822,7 +838,7 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .header-circle {
@@ -856,8 +872,8 @@
             width: 16px;
             height: 16px;
             fill: none;
-            stroke: currentColor;
-            stroke-width: 1.5;
+            stroke: #474E5A;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
@@ -906,8 +922,8 @@
             width: 24px;
             height: 24px;
             fill: none;
-            stroke: currentColor;
-            stroke-width: 1.5;
+            stroke: #474E5A;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
@@ -1096,7 +1112,7 @@
                     </svg>
                 </div>
                     </div>
-                    <span class="nav-text" id="accountSwitcherText">All accounts</span>
+                    <span class="nav-text" id="accountSwitcherText">Acme Financial Services Corporation International Holdings Limited</span>
                     <div class="dropdown-icon">
                         <svg viewBox="0 0 24 24" width="16" height="16">
                             <path d="M6 9l6 6 6-6"/>
@@ -1151,7 +1167,7 @@
                     </div>
                 </div>
                 
-                <div class="nav-group" id="workloads" style="margin-top: 24px;">
+                <div class="nav-group" id="workloads" style="margin-top: 16px;">
                     <div class="nav-component" data-tooltip="Connect">
                         <div class="icon">
                             <div class="genericIcon">
@@ -1345,6 +1361,33 @@
             const tooltip = document.getElementById('globalTooltip');
             const content = tooltip.querySelector('.tooltip-content');
             content.classList.remove('show');
+        }
+
+        // Function to check if text is truncated
+        function isTextTruncated(element) {
+            return element.scrollWidth > element.clientWidth;
+        }
+
+        // Function to update account switcher tooltip based on truncation
+        function updateAccountSwitcherTooltip() {
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            const accountSwitcherText = document.getElementById('accountSwitcherText');
+            
+            if (accountSwitcher && accountSwitcherText) {
+                const fullText = accountSwitcherText.textContent;
+                
+                // Always update the tooltip text to the full text
+                accountSwitcher.setAttribute('data-tooltip', fullText);
+                
+                // Check if text is truncated (regardless of panel state)
+                if (isTextTruncated(accountSwitcherText)) {
+                    accountSwitcher.setAttribute('data-show-tooltip-when-truncated', 'true');
+                    console.log('Account switcher text is truncated:', fullText, 'scrollWidth:', accountSwitcherText.scrollWidth, 'clientWidth:', accountSwitcherText.clientWidth);
+                } else {
+                    accountSwitcher.setAttribute('data-show-tooltip-when-truncated', 'false');
+                    console.log('Account switcher text fits:', fullText, 'scrollWidth:', accountSwitcherText.scrollWidth, 'clientWidth:', accountSwitcherText.clientWidth);
+                }
+            }
         }
 
 
@@ -1762,6 +1805,9 @@
                     // Remove any existing onclick handler to prevent conflicts
                     accountSwitcher.onclick = null;
                     
+                    // Update tooltip for truncation
+                    updateAccountSwitcherTooltip();
+                    
                     // Populate account switcher with organization's sandboxes
                     populateAccountSwitcherForOrgSandbox(organizationId);
                 }
@@ -1829,6 +1875,9 @@
                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                 // Clear any onclick handler - main event listener will handle clicks
                 accountSwitcher.onclick = null;
+                
+                // Update tooltip for truncation
+                updateAccountSwitcherTooltip();
             }
             
             // Restore dashboard title to current business account
@@ -1856,7 +1905,7 @@
                 { name: 'Acme Deliveries Canada', initials: 'AD', color: 'color-4' },
                 { name: 'Acme Rides US', initials: 'AR', color: 'color-5' },
                 { name: 'Acme Rides Europe', initials: 'AR', color: 'color-6' },
-                { name: 'Acme Financial Services', initials: 'AF', color: 'color-1' },
+                { name: 'Acme Financial Services Corporation International Holdings Limited', initials: 'AF', color: 'color-1' },
                 { name: 'Acme Technology Division', initials: 'AT', color: 'color-2' }
             ],
             'lil-fatsos': [
@@ -1911,14 +1960,19 @@
                  accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                  accountSwitcherText.textContent = 'All accounts';
                  
-                 // Update dashboard account subtitle with account count
-                 const accountSubtitle = document.getElementById('accountSubtitle');
-                 if (accountSubtitle) {
-                     const currentActiveAccount = document.getElementById('active-account');
-                     const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
-                     const accounts = organizationAccounts[organizationId] || [];
-                     accountSubtitle.textContent = `All accounts (${accounts.length})`;
-                 }
+                 // Update tooltip for truncation
+                 updateAccountSwitcherTooltip();
+                 
+                                   // Update dashboard account subtitle with account count
+                  const accountSubtitle = document.getElementById('accountSubtitle');
+                  if (accountSubtitle) {
+                      const currentActiveAccount = document.getElementById('active-account');
+                      const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
+                      const accounts = organizationAccounts[organizationId] || [];
+                      accountSubtitle.textContent = `All accounts (${accounts.length})`;
+                      // Reset color for "All accounts" view
+                      updateAccountSubtitleColor(null);
+                  }
                  
                  // Update sandboxes to show organization sandboxes
                  if (window.dashboard) {
@@ -1970,11 +2024,17 @@
                      accountSwitcher.setAttribute('data-tooltip', selectedAccountName);
                      accountSwitcherText.textContent = selectedAccountName;
                      
-                     // Update dashboard account subtitle
-                     const accountSubtitle = document.getElementById('accountSubtitle');
-                     if (accountSubtitle) {
-                         accountSubtitle.textContent = selectedAccountName;
-                     }
+                     // Update tooltip for truncation
+                     updateAccountSwitcherTooltip();
+                     
+                                           // Update dashboard account subtitle
+                      const accountSubtitle = document.getElementById('accountSubtitle');
+                      if (accountSubtitle) {
+                          accountSubtitle.textContent = selectedAccountName;
+                          // Update subtitle color to match account icon color
+                          const accountColor = this.getAttribute('data-account-color');
+                          updateAccountSubtitleColor(accountColor);
+                      }
                      
                      // Update sandboxes to show account-specific sandboxes
                      if (window.dashboard) {
@@ -2045,6 +2105,9 @@
                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                 accountSwitcherText.textContent = 'All accounts';
                 
+                // Update tooltip for truncation
+                updateAccountSwitcherTooltip();
+                
                 // Update dashboard title
                 const dashboardTitle = document.getElementById('dashboardTitle');
                 if (dashboardTitle) {
@@ -2099,10 +2162,15 @@
                     accountSwitcher.setAttribute('data-tooltip', `${selectedAccountName} (sandbox)`);
                     accountSwitcherText.textContent = `${selectedAccountName} (sandbox)`;
                     
+                    // Update tooltip for truncation
+                    updateAccountSwitcherTooltip();
+                    
                     // Update dashboard title
                     const dashboardTitle = document.getElementById('dashboardTitle');
                     if (dashboardTitle) {
                         dashboardTitle.innerHTML = `${activeSandboxName}<br><span id="accountSubtitle">Sandbox mode - ${selectedAccountName}</span>`;
+                        // Update subtitle color to match account icon color
+                        updateAccountSubtitleColor(account.color);
                     }
                     
                     // Navigate to the selected mirrored account
@@ -2193,6 +2261,9 @@
                      
                      accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                      accountSwitcherText.textContent = 'All accounts';
+                     
+                     // Update tooltip for truncation
+                     updateAccountSwitcherTooltip();
                      
                      dashboardTitle.innerHTML = `${newActiveData.name} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
                  } else {
@@ -2291,14 +2362,22 @@
                     const tooltipText = this.getAttribute('data-tooltip');
                     const parentPanel = this.closest('.nav-panel, .account-panel');
                     
-                    // For navigation components, only show tooltip if panel is not expanded
-                    if (parentPanel) {
-                        if (!parentPanel.classList.contains('expanded') && !parentPanel.classList.contains('mobile-open')) {
+                    // Special handling for account switcher - show tooltip when text is truncated
+                    if (this.id === 'accountSwitcher') {
+                        const accountSwitcherText = document.getElementById('accountSwitcherText');
+                        if (accountSwitcherText && isTextTruncated(accountSwitcherText)) {
                             showTooltip(this, tooltipText);
                         }
                     } else {
-                        // For expand button, always show tooltip
-                        showTooltip(this, tooltipText);
+                        // For navigation components, only show tooltip if panel is not expanded
+                        if (parentPanel) {
+                            if (!parentPanel.classList.contains('expanded') && !parentPanel.classList.contains('mobile-open')) {
+                                showTooltip(this, tooltipText);
+                            }
+                        } else {
+                            // For expand button, always show tooltip
+                            showTooltip(this, tooltipText);
+                        }
                     }
                 });
                 
@@ -2363,6 +2442,34 @@
                  
                  // Initialize sandbox popover buttons based on current context
                  updateSandboxPopoverButtons();
+                 
+                 // Initialize account switcher tooltip
+                 updateAccountSwitcherTooltip();
+                 
+                 // Add observer for account switcher text changes
+                 const accountSwitcherText = document.getElementById('accountSwitcherText');
+                 if (accountSwitcherText) {
+                     const textObserver = new MutationObserver(() => {
+                         updateAccountSwitcherTooltip();
+                     });
+                     textObserver.observe(accountSwitcherText, {
+                         childList: true,
+                         characterData: true,
+                         subtree: true
+                     });
+                 }
+                 
+                 // Add observer for panel expansion changes
+                 const navPanel = document.getElementById('navPanel');
+                 if (navPanel) {
+                     const panelObserver = new MutationObserver(() => {
+                         updateAccountSwitcherTooltip();
+                     });
+                     panelObserver.observe(navPanel, {
+                         attributes: true,
+                         attributeFilter: ['class']
+                     });
+                 }
              }
 
             // Handle create popover item clicks
@@ -2399,6 +2506,8 @@
         // Hide tooltip on window resize
         window.addEventListener('resize', function() {
             hideTooltip();
+            // Update account switcher tooltip as truncation may change with window size
+            updateAccountSwitcherTooltip();
         });
 
         // Update sandbox popover create buttons based on current context
@@ -2582,6 +2691,178 @@
                 }
             }, 50); // Small delay to ensure CSS transitions have started
         }
+
+        // Update tooltip for truncation
+        updateAccountSwitcherTooltip();
+        
+        // Helper function to update account subtitle color
+        function updateAccountSubtitleColor(accountColor) {
+            const accountSubtitle = document.getElementById('accountSubtitle');
+            if (accountSubtitle) {
+                // Remove all existing color classes
+                accountSubtitle.classList.remove('account-subtitle-color-1', 'account-subtitle-color-2', 'account-subtitle-color-3', 'account-subtitle-color-4', 'account-subtitle-color-5', 'account-subtitle-color-6');
+                
+                // Add the new color class if accountColor is provided
+                if (accountColor) {
+                    accountSubtitle.classList.add(`account-subtitle-${accountColor}`);
+                }
+            }
+        }
+
+        // Populate account switcher with accounts for a given organization
+        function populateAccountSwitcher(organizationId) {
+            const accountPopoverContent = document.getElementById('account-popover-content');
+            const accounts = organizationAccounts[organizationId] || [];
+            
+            // Clear existing content
+            accountPopoverContent.innerHTML = '';
+            
+                         // Add "All accounts" header
+             const allAccountsItem = document.createElement('div');
+             allAccountsItem.className = 'account-popover-item selected';
+             allAccountsItem.innerHTML = `
+                 <div class="icon">
+                     <div class="genericIcon">
+                         <svg viewBox="0 0 24 24" width="16" height="16">
+                             <path d="M3 21h18"/>
+                             <path d="M5 21V7l8-4v18"/>
+                             <path d="M19 21V11l-6-4"/>
+                             <path d="M9 9v.01"/>
+                             <path d="M9 12v.01"/>
+                             <path d="M9 15v.01"/>
+                             <path d="M9 18v.01"/>
+                         </svg>
+                     </div>
+                 </div>
+                 <span>All accounts</span>
+             `;
+             
+             // Add click handler for "All accounts"
+             allAccountsItem.addEventListener('click', function() {
+                 // Remove selected class from all items
+                 accountPopoverContent.querySelectorAll('.account-popover-item').forEach(item => {
+                     item.classList.remove('selected');
+                 });
+                 // Add selected class to this item
+                 this.classList.add('selected');
+                 
+                 // Update account switcher to show "All accounts"
+                 const accountSwitcher = document.getElementById('accountSwitcher');
+                 const accountSwitcherText = document.getElementById('accountSwitcherText');
+                 
+                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                 accountSwitcherText.textContent = 'All accounts';
+                 
+                 // Update tooltip for truncation
+                 updateAccountSwitcherTooltip();
+                 
+                 // Update dashboard account subtitle with account count
+                 const accountSubtitle = document.getElementById('accountSubtitle');
+                 if (accountSubtitle) {
+                     const currentActiveAccount = document.getElementById('active-account');
+                     const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
+                     const accounts = organizationAccounts[organizationId] || [];
+                     accountSubtitle.textContent = `All accounts (${accounts.length})`;
+                     // Reset color for "All accounts" view
+                     updateAccountSubtitleColor(null);
+                 }
+                 
+                 // Update sandboxes to show organization sandboxes
+                 if (window.dashboard) {
+                     const currentActiveAccount = document.getElementById('active-account');
+                     const accountName = currentActiveAccount ? currentActiveAccount.dataset.accountName : null;
+                     window.dashboard.updateSandboxesForAccount(accountName);
+                 }
+                 
+                 // Update popover create buttons for organization context
+                 updateSandboxPopoverButtons();
+                 
+                 console.log('All accounts selected - showing organization sandboxes');
+                 hideAccountPopover();
+             });
+             
+             accountPopoverContent.appendChild(allAccountsItem);
+            
+            // Add accounts for the organization
+            accounts.forEach(account => {
+                const accountItem = document.createElement('div');
+                accountItem.className = 'account-popover-item account';
+                accountItem.setAttribute('data-account-name', account.name);
+                accountItem.setAttribute('data-account-initials', account.initials);
+                accountItem.setAttribute('data-account-color', account.color);
+                accountItem.innerHTML = `
+                    <div class="icon">
+                        <div class="accountAvatar ${account.color}">${account.initials}</div>
+                    </div>
+                    <span>${account.name}</span>
+                `;
+                accountPopoverContent.appendChild(accountItem);
+            });
+            
+                         // Re-attach click handlers to new account items
+             accountPopoverContent.querySelectorAll('.account').forEach(item => {
+                 item.addEventListener('click', function() {
+                     // Remove selected class from all items
+                     accountPopoverContent.querySelectorAll('.account-popover-item').forEach(popoverItem => {
+                         popoverItem.classList.remove('selected');
+                     });
+                     // Add selected class to this item
+                     this.classList.add('selected');
+                     
+                     // Update account switcher to show selected account name
+                     const accountSwitcher = document.getElementById('accountSwitcher');
+                     const accountSwitcherText = document.getElementById('accountSwitcherText');
+                     const selectedAccountName = this.querySelector('span').textContent;
+                     
+                     accountSwitcher.setAttribute('data-tooltip', selectedAccountName);
+                     accountSwitcherText.textContent = selectedAccountName;
+                     
+                     // Update tooltip for truncation
+                     updateAccountSwitcherTooltip();
+                     
+                     // Update dashboard account subtitle
+                     const accountSubtitle = document.getElementById('accountSubtitle');
+                     if (accountSubtitle) {
+                         accountSubtitle.textContent = selectedAccountName;
+                         // Update subtitle color to match account icon color
+                         const accountColor = this.getAttribute('data-account-color');
+                         updateAccountSubtitleColor(accountColor);
+                     }
+                     
+                     // Update sandboxes to show account-specific sandboxes
+                     if (window.dashboard) {
+                         const currentActiveAccount = document.getElementById('active-account');
+                         const organizationAccountName = currentActiveAccount ? currentActiveAccount.dataset.accountName : null;
+                         window.dashboard.updateSandboxesForAccount(organizationAccountName);
+                     }
+                     
+                     // Update popover create buttons for account context
+                     updateSandboxPopoverButtons();
+                     
+                     console.log('Account selected:', selectedAccountName, '- showing account sandboxes');
+                     hideAccountPopover();
+                 });
+             });
+             
+             // Add animation delays to all items
+             accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
+                 item.style.animationDelay = `${(index + 1) * 0.05}s`;
+             });
+        }
+
+        // Initialize account subtitle color on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeAccount = document.getElementById('active-account');
+            const accountSubtitle = document.getElementById('accountSubtitle');
+            
+            // Check if we have an active account and the subtitle shows a specific account (not "All accounts")
+            if (activeAccount && accountSubtitle && !accountSubtitle.textContent.includes('All accounts')) {
+                const accountColor = activeAccount.getAttribute('data-account-color');
+                if (accountColor) {
+                    updateAccountSubtitleColor(accountColor);
+                }
+            }
+        });
     </script>
     
     <!-- Load the updated dashboard.js -->

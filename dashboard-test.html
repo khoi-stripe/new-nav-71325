@@ -3,543 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account-Specific Sandbox Test</title>
+    <title>Account Switching Test</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            margin-bottom: 24px;
-            color: #1a1a1a;
-        }
-
-        .account-section {
-            margin-bottom: 32px;
-            padding: 24px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .account-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .account-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .account-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            background-color: #533AFD;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            color: white;
-        }
-
-        .account-avatar.color-1 { background-color: #8B5CF6; }
-        .account-avatar.color-2 { background-color: #EF4444; }
-        .account-avatar.color-3 { background-color: #059669; }
-        .account-avatar.color-4 { background-color: #DC2626; }
-        .account-avatar.color-5 { background-color: #7C3AED; }
-        .account-avatar.color-6 { background-color: #0891B2; }
-
-        .account-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .account-status {
-            font-size: 14px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .switch-button {
-            background: #533AFD;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .switch-button:hover {
-            background: #4228d4;
-        }
-
-        .switch-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .sandbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .sandbox-item {
-            background: white;
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .sandbox-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .sandbox-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .sandbox-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background-color: #533AFD;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 10px;
-            color: white;
-        }
-
-        .sandbox-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .sandbox-info {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .sandbox-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .sandbox-btn {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background-color 0.2s;
-        }
-
-        .sandbox-btn:hover {
-            background: #e9ecef;
-        }
-
-        .sandbox-btn.enter {
-            background: #e3f2fd;
-            color: #1976d2;
-            border-color: #1976d2;
-        }
-
-        .sandbox-btn.delete {
-            background: #ffebee;
-            color: #d32f2f;
-            border-color: #d32f2f;
-        }
-
-        .controls {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 32px;
-            align-items: center;
-        }
-
-        .create-sandbox {
-            background: #059669;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .create-sandbox:hover {
-            background: #047857;
-        }
-
-        .current-account {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a1a;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .stats {
-            display: flex;
-            gap: 24px;
-            margin-top: 16px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 600;
-            color: #533AFD;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #4caf50;
-            color: white;
-            padding: 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            transform: translateX(100%);
-            transition: transform 0.3s;
-            z-index: 1000;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        .notification.error {
-            background: #f44336;
-        }
-
-        .current-account-indicator {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: #533AFD;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 1000;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-account { border: 1px solid #ccc; padding: 10px; margin: 5px; cursor: pointer; }
+        .test-account:hover { background-color: #f0f0f0; }
+        .test-account.active { background-color: #007bff; color: white; }
+        .child-element { pointer-events: none; }
+        .result { margin-top: 20px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; }
     </style>
 </head>
 <body>
-    <div class="current-account-indicator" id="currentAccountIndicator">
-        No Account Selected
-    </div>
-
-    <div class="container">
-        <h1>Account-Specific Sandbox Management</h1>
+    <h1>Account Switching Test</h1>
+    <p>Click on any account element (including child elements) to test if account switching works:</p>
+    
+    <div id="test-container">
+        <div class="test-account business-account" data-account-name="Acme Inc" data-account-initials="AI">
+            <div class="icon">
+                <div class="accountAvatar">AI</div>
+            </div>
+            <span class="nav-text">Acme Inc</span>
+        </div>
         
-        <div class="controls">
-            <div class="current-account">
-                <span>Current Account:</span>
-                <span id="currentAccountDisplay">None</span>
+        <div class="test-account business-account" data-account-name="Cactus Practice" data-account-initials="CP">
+            <div class="icon">
+                <div class="accountAvatar">CP</div>
             </div>
-            <button class="create-sandbox" onclick="createNewSandbox()">Create New Sandbox</button>
+            <span class="nav-text">Cactus Practice</span>
         </div>
-
-        <div class="account-section">
-            <div class="account-header">
-                <div class="account-info">
-                    <div class="account-avatar color-1">AC</div>
-                    <div>
-                        <div class="account-name">Acme Corp</div>
-                        <div class="account-status">acme@example.com</div>
-                    </div>
-                </div>
-                <button class="switch-button" onclick="switchAccount('Acme Corp')">Switch to Account</button>
+        
+        <div class="test-account business-account" data-account-name="Lil'Fatsos" data-account-initials="LF">
+            <div class="icon">
+                <div class="accountAvatar">LF</div>
             </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="acme-total">0</div>
-                    <div class="stat-label">Total Sandboxes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="acme-recent">0</div>
-                    <div class="stat-label">Recently Used</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="acme-today">0</div>
-                    <div class="stat-label">Created Today</div>
-                </div>
-            </div>
-            <div class="sandbox-grid" id="acme-sandboxes"></div>
-        </div>
-
-        <div class="account-section">
-            <div class="account-header">
-                <div class="account-info">
-                    <div class="account-avatar color-2">TC</div>
-                    <div>
-                        <div class="account-name">TechCorp Inc</div>
-                        <div class="account-status">tech@example.com</div>
-                    </div>
-                </div>
-                <button class="switch-button" onclick="switchAccount('TechCorp Inc')">Switch to Account</button>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="tech-total">0</div>
-                    <div class="stat-label">Total Sandboxes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="tech-recent">0</div>
-                    <div class="stat-label">Recently Used</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="tech-today">0</div>
-                    <div class="stat-label">Created Today</div>
-                </div>
-            </div>
-            <div class="sandbox-grid" id="tech-sandboxes"></div>
-        </div>
-
-        <div class="account-section">
-            <div class="account-header">
-                <div class="account-info">
-                    <div class="account-avatar color-3">SS</div>
-                    <div>
-                        <div class="account-name">StartupSpark</div>
-                        <div class="account-status">startup@example.com</div>
-                    </div>
-                </div>
-                <button class="switch-button" onclick="switchAccount('StartupSpark')">Switch to Account</button>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="startup-total">0</div>
-                    <div class="stat-label">Total Sandboxes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="startup-recent">0</div>
-                    <div class="stat-label">Recently Used</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="startup-today">0</div>
-                    <div class="stat-label">Created Today</div>
-                </div>
-            </div>
-            <div class="sandbox-grid" id="startup-sandboxes"></div>
+            <span class="nav-text">Lil'Fatsos</span>
         </div>
     </div>
-
-    <div class="notification" id="notification"></div>
-
-    <!-- Mock active account element for testing -->
-    <div id="active-account" 
-         data-account-name="Acme Corp" 
-         data-account-initials="AC" 
-         data-account-color="color-1"
-         style="display: none;">
+    
+    <div id="result" class="result">
+        <strong>Last clicked account:</strong> <span id="clicked-account">None</span>
     </div>
-
-    <script src="dashboard.js"></script>
+    
     <script>
-        let currentAccount = 'Acme Corp';
-        
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        function updateAccountDisplay() {
-            document.getElementById('currentAccountDisplay').textContent = currentAccount;
-            document.getElementById('currentAccountIndicator').textContent = `Active: ${currentAccount}`;
-            
-            // Update all switch buttons
-            document.querySelectorAll('.switch-button').forEach(button => {
-                const accountName = button.getAttribute('onclick').match(/'([^']+)'/)[1];
-                button.disabled = accountName === currentAccount;
-                button.textContent = accountName === currentAccount ? 'Current Account' : 'Switch to Account';
-            });
-            
-            updateAllStats();
-        }
-        
-        function switchAccount(accountName) {
-            if (accountName === currentAccount) return;
-            
-            currentAccount = accountName;
-            
-            // Update the mock active account element
-            const activeAccount = document.getElementById('active-account');
-            activeAccount.setAttribute('data-account-name', accountName);
-            
-            // Trigger change event for the dashboard to detect account switch
-            const event = new Event('DOMSubtreeModified');
-            activeAccount.dispatchEvent(event);
-            
-            updateAccountDisplay();
-            showNotification(`Switched to ${accountName}`);
-        }
-        
-        function createNewSandbox() {
-            const sandboxName = prompt('Enter sandbox name:');
-            if (sandboxName && window.dashboard) {
-                const sandbox = window.dashboard.createSandbox(sandboxName);
-                if (sandbox) {
-                    showNotification(`Created sandbox: ${sandboxName}`);
-                    renderSandboxes();
-                }
-            }
-        }
-        
-        function enterSandbox(sandboxName) {
-            showNotification(`Entering sandbox: ${sandboxName}`);
-            // In a real implementation, this would redirect to the sandbox
-            console.log('Entering sandbox:', sandboxName);
-        }
-        
-        function deleteSandbox(sandboxName) {
-            if (confirm(`Are you sure you want to delete the sandbox "${sandboxName}"?`)) {
-                if (window.dashboard) {
-                    window.dashboard.deleteSandbox(sandboxName);
-                    showNotification(`Deleted sandbox: ${sandboxName}`, 'error');
-                    renderSandboxes();
-                }
-            }
-        }
-        
-        function updateAllStats() {
-            const accounts = ['Acme Corp', 'TechCorp Inc', 'StartupSpark'];
-            accounts.forEach(accountName => {
-                if (window.dashboard) {
-                    const stats = window.dashboard.getAccountStats(accountName);
-                    const accountKey = accountName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 6);
+        // Test the fixed event handler logic
+        document.querySelectorAll('.test-account').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // This mimics the fix: use closest to find the business-account element
+                const businessAccountElement = this.closest('.business-account');
+                if (businessAccountElement) {
+                    // Remove active class from all accounts
+                    document.querySelectorAll('.test-account').forEach(acc => acc.classList.remove('active'));
                     
-                    document.getElementById(`${accountKey === 'acmeco' ? 'acme' : accountKey === 'techco' ? 'tech' : 'startup'}-total`).textContent = stats.totalSandboxes;
-                    document.getElementById(`${accountKey === 'acmeco' ? 'acme' : accountKey === 'techco' ? 'tech' : 'startup'}-recent`).textContent = stats.recentlyUsed;
-                    document.getElementById(`${accountKey === 'acmeco' ? 'acme' : accountKey === 'techco' ? 'tech' : 'startup'}-today`).textContent = stats.createdToday;
-                }
-            });
-        }
-        
-        function renderSandboxes() {
-            const accounts = [
-                { name: 'Acme Corp', key: 'acme' },
-                { name: 'TechCorp Inc', key: 'tech' },
-                { name: 'StartupSpark', key: 'startup' }
-            ];
-            
-            accounts.forEach(account => {
-                const container = document.getElementById(`${account.key}-sandboxes`);
-                if (container && window.dashboard) {
-                    const sandboxes = window.dashboard.getSandboxesForAccount(account.name);
-                    container.innerHTML = '';
+                    // Add active class to clicked account
+                    businessAccountElement.classList.add('active');
                     
-                    sandboxes.forEach((sandbox, index) => {
-                        const initials = sandbox.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
-                        const colorClass = `color-${(index % 6) + 1}`;
-                        
-                        const sandboxItem = document.createElement('div');
-                        sandboxItem.className = 'sandbox-item';
-                        sandboxItem.innerHTML = `
-                            <div class="sandbox-header">
-                                <div class="sandbox-avatar ${colorClass}">${initials}</div>
-                                <div class="sandbox-name">${sandbox.name}</div>
-                            </div>
-                            <div class="sandbox-info">
-                                Created: ${new Date(sandbox.created).toLocaleDateString()}
-                                ${sandbox.lastUsed ? `• Last used: ${new Date(sandbox.lastUsed).toLocaleDateString()}` : ''}
-                            </div>
-                            <div class="sandbox-actions">
-                                <button class="sandbox-btn enter" onclick="enterSandbox('${sandbox.name}')">Enter</button>
-                                <button class="sandbox-btn delete" onclick="deleteSandbox('${sandbox.name}')">Delete</button>
-                            </div>
-                        `;
-                        container.appendChild(sandboxItem);
-                    });
-                }
-            });
-        }
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait for dashboard to initialize
-            setTimeout(() => {
-                updateAccountDisplay();
-                renderSandboxes();
-            }, 100);
-        });
-        
-        // Listen for account changes
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'data-account-name') {
-                    renderSandboxes();
-                    updateAllStats();
+                    // Update result
+                    const accountName = businessAccountElement.dataset.accountName;
+                    document.getElementById('clicked-account').textContent = accountName;
+                    
+                    console.log('Account switched to:', accountName);
                 }
             });
         });
         
-        const activeAccount = document.getElementById('active-account');
-        if (activeAccount) {
-            observer.observe(activeAccount, {
-                attributes: true,
-                attributeFilter: ['data-account-name']
+        // Test clicking on child elements
+        document.querySelectorAll('.accountAvatar, .nav-text').forEach(child => {
+            child.addEventListener('click', function(e) {
+                console.log('Child element clicked:', this);
             });
-        }
+        });
     </script>
 </body>
 </html> 

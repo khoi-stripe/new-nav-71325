@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Switcher Truncation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; padding: 20px; margin: 20px 0; }
+        .test-button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+        
+        /* Mimic the dashboard nav panel styling */
+        .nav-panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            width: 60px;
+            transition: width 0.3s ease;
+            margin: 20px;
+        }
+        
+        .nav-panel.expanded {
+            width: 250px;
+        }
+        
+        .nav-component {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px 4px 2px;
+            margin: 0;
+            cursor: pointer;
+            background-color: transparent;
+            border-radius: 6px;
+        }
+        
+        .nav-component .icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            margin-right: 8px;
+        }
+        
+        .nav-component .nav-text {
+            margin-left: 8px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-panel.expanded .nav-component .nav-text {
+            opacity: 1;
+        }
+        
+        .dropdown-icon {
+            margin-left: auto;
+            width: 16px;
+            height: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-panel.expanded .dropdown-icon {
+            opacity: 1;
+        }
+        
+        /* Account switcher text truncation */
+        #accountSwitcherText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 120px;
+        }
+        
+        /* When panel is expanded, allow full width */
+        .nav-panel.expanded #accountSwitcherText {
+            max-width: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Account Switcher Truncation Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button class="test-button" onclick="togglePanel()">Toggle Panel (Expanded/Collapsed)</button>
+        <button class="test-button" onclick="setAccountName('All accounts')">Short Name</button>
+        <button class="test-button" onclick="setAccountName('Very Long Organization Name That Should Be Truncated')">Very Long Name</button>
+        <button class="test-button" onclick="setAccountName('Super Ultra Mega Long Account Name That Definitely Needs Truncation')">Super Long Name</button>
+        <button class="test-button" onclick="setAccountName('Account Name (sandbox)')">Sandbox Mode Name</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Account Switcher Test</h2>
+        <div class="nav-panel" id="navPanel">
+            <div class="nav-component" id="accountSwitcher">
+                <div class="icon">📁</div>
+                <span class="nav-text" id="accountSwitcherText">All accounts</span>
+                <div class="dropdown-icon">▼</div>
+            </div>
+        </div>
+        
+        <p><strong>Current State:</strong> <span id="panelState">Collapsed</span></p>
+        <p><strong>Account Name:</strong> <span id="currentAccountName">All accounts</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Instructions</h2>
+        <ol>
+            <li>Try different account name lengths using the buttons above</li>
+            <li>Notice how long names are truncated with "..." when the panel is collapsed</li>
+            <li>Toggle the panel to see how the full name is shown when expanded</li>
+            <li>The truncation limit is set to 120px width</li>
+        </ol>
+    </div>
+    
+    <script>
+        function togglePanel() {
+            const panel = document.getElementById('navPanel');
+            const stateDisplay = document.getElementById('panelState');
+            
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                stateDisplay.textContent = 'Collapsed';
+            } else {
+                panel.classList.add('expanded');
+                stateDisplay.textContent = 'Expanded';
+            }
+        }
+        
+        function setAccountName(name) {
+            const accountText = document.getElementById('accountSwitcherText');
+            const currentName = document.getElementById('currentAccountName');
+            
+            accountText.textContent = name;
+            currentName.textContent = name;
+        }
+    </script>
+</body>
+</html> 

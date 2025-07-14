@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Indicator Bar Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            font-family: Arial, sans-serif; 
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 50px;
+            left: 20px;
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+        
+        .test-button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 4px;
+            display: block;
+            width: 200px;
+        }
+        
+        .test-button:hover { 
+            background: #0056b3; 
+        }
+        
+        /* Mimic the dashboard layout */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+        
+        .account-panel {
+            width: 65px;
+            background: #F5F6F8;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .nav-panel {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Sandbox Mode Indicator Bar */
+        .sandbox-indicator-bar {
+            position: fixed;
+            top: 0;
+            left: 65px;  /* Start after collapsed account panel */
+            right: 0;
+            height: 32px;
+            background-color: #0E3359;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            padding: 0 16px;
+        }
+
+        .sandbox-indicator-bar .exit-link {
+            position: absolute;
+            left: 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .sandbox-indicator-bar .exit-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        /* Adjust nav panel and main content top margin when sandbox bar is visible */
+        .dashboard.sandbox-mode .nav-panel,
+        .dashboard.sandbox-mode .main-content {
+            margin-top: 32px;
+        }
+
+        /* Remove general dashboard padding and apply specific spacing */
+        .dashboard.sandbox-mode {
+            padding-top: 0;
+        }
+        
+        /* Adjust bar position when account panel is expanded */
+        .dashboard.sandbox-mode.account-panel-expanded .sandbox-indicator-bar {
+            left: 240px;  /* Start after expanded account panel */
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard" id="dashboard">
+        <!-- Sandbox Mode Indicator Bar (hidden by default) -->
+        <div class="sandbox-indicator-bar" id="sandboxIndicatorBar" style="display: none;">
+            <a href="#" class="exit-link" onclick="exitSandboxMode(); return false;">Exit sandbox</a>
+            <span>Sandbox Mode</span>
+        </div>
+        
+        <div class="account-panel">
+            <h4>Account Panel</h4>
+            <p>Excluded from blue bar</p>
+        </div>
+        
+        <div class="nav-panel">
+            <h3>Navigation Panel</h3>
+            <p>Blue bar starts here</p>
+        </div>
+        
+        <div class="main-content">
+            <h1>Main Content Area</h1>
+            <p>This represents the main content area</p>
+            <p>When in sandbox mode, you should see a blue bar spanning from the nav panel to the right edge, excluding the account panel on the left.</p>
+        </div>
+    </div>
+    
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <button class="test-button" onclick="enterSandboxMode('Test Sandbox')">Enter Sandbox Mode</button>
+        <button class="test-button" onclick="enterSandboxMode('Development Environment')">Enter Dev Sandbox</button>
+        <button class="test-button" onclick="enterSandboxMode('Organization Alpha Sandbox')">Enter Org Sandbox</button>
+        <button class="test-button" onclick="exitSandboxMode()">Exit Sandbox Mode</button>
+        
+        <p><strong>Current Mode:</strong> <span id="modeStatus">Normal</span></p>
+    </div>
+    
+    <script>
+        let isInSandboxMode = false;
+        
+        function enterSandboxMode(sandboxName) {
+            isInSandboxMode = true;
+            
+            // Show sandbox indicator bar
+            const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');
+            const dashboard = document.getElementById('dashboard');
+            const modeStatus = document.getElementById('modeStatus');
+            
+            if (sandboxIndicatorBar) {
+                sandboxIndicatorBar.style.display = 'flex';
+                sandboxIndicatorBar.querySelector('span').textContent = `Sandbox Mode: ${sandboxName}`;
+            }
+            if (dashboard) {
+                dashboard.classList.add('sandbox-mode');
+            }
+            
+            modeStatus.textContent = `Sandbox: ${sandboxName}`;
+            console.log('Entered sandbox mode:', sandboxName);
+        }
+        
+        function exitSandboxMode() {
+            isInSandboxMode = false;
+            
+            // Hide sandbox indicator bar
+            const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');
+            const dashboard = document.getElementById('dashboard');
+            const modeStatus = document.getElementById('modeStatus');
+            
+            if (sandboxIndicatorBar) {
+                sandboxIndicatorBar.style.display = 'none';
+            }
+            if (dashboard) {
+                dashboard.classList.remove('sandbox-mode');
+            }
+            
+            modeStatus.textContent = 'Normal';
+            console.log('Exited sandbox mode');
+        }
+    </script>
+</body>
+</html> 

@@ -163,7 +163,7 @@ class Dashboard {
         
         return [
             {
-                name: `${orgName} Development Environment`,
+                name: `${orgName} Q3 Planning`,
                 type: 'organization',
                 organizationId: organizationId,
                 accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
@@ -171,7 +171,15 @@ class Dashboard {
                 lastUsed: null
             },
             {
-                name: `${orgName} Testing Environment`,
+                name: `${orgName} Beta Features`,
+                type: 'organization',
+                organizationId: organizationId,
+                accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
+                created: new Date().toISOString(),
+                lastUsed: null
+            },
+            {
+                name: `${orgName} Holiday Campaign`,
                 type: 'organization',
                 organizationId: organizationId,
                 accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
