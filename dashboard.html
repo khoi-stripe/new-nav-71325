@@ -1930,6 +1930,8 @@
         let activeSandboxOrganization = '';
         let activeSandboxAccount = '';
         let currentSandboxAccount = null; // Track current account in org sandbox mode
+        let originalBusinessAccountName = ''; // Track original business account when entering sandbox mode
+        let originalBusinessAccountOrganization = ''; // Track original business account organization
 
         // Enter sandbox mode
         function enterSandboxMode(sandboxName, sandboxType, organizationId = null, accountName = null) {
@@ -1938,6 +1940,13 @@
             activeSandboxType = sandboxType;
             activeSandboxOrganization = organizationId;
             activeSandboxAccount = accountName;
+            
+            // Capture the original business account that was active when sandbox mode was entered
+            const originalBusinessAccount = document.getElementById('active-account');
+            if (originalBusinessAccount) {
+                originalBusinessAccountName = originalBusinessAccount.dataset.accountName;
+                originalBusinessAccountOrganization = originalBusinessAccount.dataset.organization;
+            }
             
             // Reset current sandbox account to ensure we start with "All accounts" for organization sandboxes
             currentSandboxAccount = null;
@@ -2026,6 +2035,8 @@
             activeSandboxOrganization = '';
             activeSandboxAccount = '';
             currentSandboxAccount = null; // Reset account navigation
+            originalBusinessAccountName = ''; // Clear original business account tracking
+            originalBusinessAccountOrganization = ''; // Clear original business account organization
             
             // Hide sandbox indicator bar
             const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');

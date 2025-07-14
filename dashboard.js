@@ -222,33 +222,44 @@ class Dashboard {
         const activeAccountElement = document.getElementById('active-account');
         const organizationId = activeAccountElement ? activeAccountElement.dataset.organization : null;
         
-        // Determine current viewing context (organization vs specific account)
-        const accountSwitcherText = document.getElementById('accountSwitcherText');
-        const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
-        
-        // Check if we're in organization sandbox mode with a specific account selected
-        const isInOrgSandbox = typeof window !== 'undefined' && window.isInSandboxMode && window.activeSandboxType === 'organization';
-        const currentSandboxAccount = typeof window !== 'undefined' ? window.currentSandboxAccount : null;
+        // Check if we're in sandbox mode
+        const isInSandboxMode = typeof window !== 'undefined' && window.isInSandboxMode;
+        const originalBusinessAccountName = typeof window !== 'undefined' ? window.originalBusinessAccountName : null;
+        const originalBusinessAccountOrganization = typeof window !== 'undefined' ? window.originalBusinessAccountOrganization : null;
         
         let sandboxesToShow = [];
         
-        if (isInOrgSandbox && currentSandboxAccount) {
-            // In org sandbox mode with specific account selected - show account sandboxes for that mirrored account
-            sandboxesToShow = this.getSandboxesForAccount(currentSandboxAccount);
-            console.log('Showing account sandboxes for mirrored account:', currentSandboxAccount);
-        } else if (isViewingAllAccounts && organizationId) {
-            // Show only organization sandboxes when viewing "All accounts"
-            sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
-            console.log('Showing organization sandboxes for:', organizationId);
-        } else if (!isViewingAllAccounts && accountSwitcherText) {
-            // Show account sandboxes for the specific selected account
-            const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
-            sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
-            console.log('Showing account sandboxes for:', specificAccountName);
+        if (isInSandboxMode && originalBusinessAccountName) {
+            // In sandbox mode - always use the original business account to determine available sandboxes
+            // Don't let account switcher changes affect which sandboxes are available
+            if (originalBusinessAccountOrganization) {
+                // Original business account was part of an organization - show organization sandboxes
+                sandboxesToShow = this.getOrganizationSandboxesForOrganization(originalBusinessAccountOrganization);
+                console.log('Showing organization sandboxes for original business account organization:', originalBusinessAccountOrganization);
+            } else {
+                // Original business account was standalone - show account sandboxes
+                sandboxesToShow = this.getSandboxesForAccount(originalBusinessAccountName);
+                console.log('Showing account sandboxes for original business account:', originalBusinessAccountName);
+            }
         } else {
-            // Fallback: show account sandboxes for the main account
-            sandboxesToShow = this.getSandboxesForAccount(accountName);
-            console.log('Showing fallback account sandboxes for:', accountName);
+            // Not in sandbox mode - use normal logic based on current account switcher state
+            const accountSwitcherText = document.getElementById('accountSwitcherText');
+            const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+            
+            if (isViewingAllAccounts && organizationId) {
+                // Show only organization sandboxes when viewing "All accounts"
+                sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
+                console.log('Showing organization sandboxes for:', organizationId);
+            } else if (!isViewingAllAccounts && accountSwitcherText) {
+                // Show account sandboxes for the specific selected account
+                const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
+                sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
+                console.log('Showing account sandboxes for:', specificAccountName);
+            } else {
+                // Fallback: show account sandboxes for the main account
+                sandboxesToShow = this.getSandboxesForAccount(accountName);
+                console.log('Showing fallback account sandboxes for:', accountName);
+            }
         }
         
         // Populate main container
