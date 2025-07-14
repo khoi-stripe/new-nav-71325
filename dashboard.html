@@ -4,985 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            overflow: hidden;
-        }
-
-        .dashboard {
-            display: flex;
-            height: 100vh;
-            background-color: #f5f5f5;
-            overflow: visible;
-        }
-
-        /* Left Navigation Panels */
-        .nav-panel, .account-panel {
-            background: #ffffff;
-            width: 65px;
-            height: 100vh;
-            padding: 16px 20px;
-            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1), margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #e0e0e0;
-            box-sizing: border-box;
-        }
-
-        .nav-panel {
-            overflow: visible;
-        }
-
-        .account-panel {
-            overflow: visible;
-        }
-
-        .account-panel {
-            background: #F5F6F8;
-            box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.08);
-        }
-
-        .account-panel {
-            z-index: 1000;
-        }
-
-        .nav-panel {
-            z-index: 1001;
-        }
-
-        .account-panel {
-            cursor: pointer;
-        }
-
-        /* Expand Button Container */
-        .expandButton-container {
-            position: fixed;
-            left: 130px; /* 65px (account panel) + 65px (nav panel) + 8px offset - 8px container padding */
-            top: 50%;
-            transform: translateY(-50%);
-            width: 24px; /* Increased for better click area */
-            height: 32px; /* 16px button + 8px padding on top and bottom */
-            z-index: 1002;
-            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 4px;
-            backdrop-filter: blur(10px);
-        }
-
-        .expandButton-container:hover {
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* Expand Button */
-        .expandButton {
-            width: 2px;
-            height: 16px;
-            background-color: #e0e0e0;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-        }
-
-        /* Default state - arrow points right (expand) */
-        .expandButton-container:hover .expandButton {
-            background-color: transparent;
-            width: 6px;
-            height: 6px;
-            border-right: 2px solid #666;
-            border-bottom: 2px solid #666;
-            transform: rotate(-45deg);
-        }
-
-        /* When navPanel is expanded - arrow points left (collapse) */
-        .nav-panel.expanded ~ .expandButton-container:hover .expandButton {
-            border-right: none;
-            border-left: 2px solid #666;
-            border-bottom: 2px solid #666;
-            transform: rotate(45deg);
-        }
-
-        /* Global Tooltip Container */
-        .global-tooltip {
-            position: fixed;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 10000;
-        }
-
-        .tooltip-content {
-            position: absolute;
-            background-color: #333;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateY(-50%);
-        }
-
-        .tooltip-content.show {
-            opacity: 1;
-        }
-
-        /* Mobile - hide tooltips */
-        @media (max-width: 768px) {
-            .global-tooltip {
-                display: none;
-            }
-        }
-
-        /* Account Switcher Popover */
-        .account-popover {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10001;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateY(-8px);
-        }
-
-        .account-popover.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .account-popover-content {
-            position: absolute;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            min-width: 280px;
-            max-width: 320px;
-            padding: 8px;
-            transform: scale(0.95);
-            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .account-popover.show .account-popover-content {
-            transform: scale(1);
-        }
-
-        .account-popover-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 0;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            font-size: 14px;
-            color: #333;
-            opacity: 0;
-            transform: translateY(4px);
-        }
-
-        .account-popover.show .account-popover-item {
-            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        /* Animation delays are now handled dynamically in JavaScript */
-
-        @keyframes slideInItem {
-            to {
-            opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .account-popover-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .account-popover-item.selected {
-            position: relative;
-            padding-right: 40px;
-            font-weight: 500;
-        }
-
-        .account-popover-item.selected::after {
-            content: '';
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        .account-popover-item.selected:hover {
-            background-color: #f8f9fa;
-        }
-
-        .account-popover-item .icon {
-            margin-right: 8px;
-        }
-        
-        /* Sandbox items in account popover */
-        .account-popover-item.sandbox-item {
-            border-left: 3px solid #533AFD;
-            background: rgba(83, 58, 253, 0.05);
-        }
-        
-        .account-popover-item.sandbox-item:hover {
-            background: rgba(83, 58, 253, 0.1);
-        }
-        
-        .account-popover-item.sandbox-item.selected {
-            position: relative;
-            padding-right: 40px;
-            font-weight: 500;
-        }
-
-        .account-popover-item.sandbox-item.selected::after {
-            content: '';
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        .account-popover-item.sandbox-item.selected:hover {
-            background: rgba(83, 58, 253, 0.1);
-        }
-        .account-popover-divider {
-            height: 1px;
-            background-color: #e0e0e0;
-            margin: 0;
-            opacity: 0;
-            transform: scaleX(0);
-        }
-
-        .account-popover.show .account-popover-divider {
-            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            animation-delay: 0.15s;
-        }
-
-        @keyframes slideInDivider {
-            to {
-            opacity: 1;
-                transform: scaleX(1);
-            }
-        }
-
-        /* Create Popover */
-        .create-popover {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10001;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateX(-8px);
-        }
-
-        .create-popover.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-        }
-
-        .create-popover-content {
-            position: absolute;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            min-width: 280px;
-            max-width: 320px;
-            padding: 8px;
-            transform: scale(0.95);
-            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .create-popover.show .create-popover-content {
-            transform: scale(1);
-        }
-
-        .create-popover-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 0;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            font-size: 14px;
-            color: #333;
-            opacity: 0;
-            transform: translateY(4px);
-        }
-
-        .create-popover.show .create-popover-item {
-            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        .create-popover.show .create-popover-item:nth-child(1) { animation-delay: 0.05s; }
-        .create-popover.show .create-popover-item:nth-child(2) { animation-delay: 0.1s; }
-
-        .create-popover-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .create-popover-item .icon {
-            margin-right: 8px;
-        }
-
-        /* Sandbox Popover */
-        .sandbox-popover {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10001;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateX(-8px);
-        }
-
-        .sandbox-popover.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-        }
-
-        .sandbox-popover-content {
-            position: absolute;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            min-width: 280px;
-            max-width: 320px;
-            padding: 8px;
-            transform: scale(0.95);
-            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .sandbox-popover.show .sandbox-popover-content {
-            transform: scale(1);
-        }
-
-        .sandbox-popover-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 0;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            font-size: 14px;
-            color: #333;
-            opacity: 0;
-            transform: translateY(4px);
-        }
-
-        .sandbox-popover.show .sandbox-popover-item {
-            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        .sandbox-popover.show .sandbox-popover-item:nth-child(1) { animation-delay: 0.05s; }
-.sandbox-popover.show .sandbox-popover-item:nth-child(2) { animation-delay: 0.1s; }
-.sandbox-popover.show .sandbox-popover-item:nth-child(3) { animation-delay: 0.15s; }
-.sandbox-popover.show .sandbox-popover-item:nth-child(4) { animation-delay: 0.2s; }
-.sandbox-popover.show .sandbox-popover-item:nth-child(5) { animation-delay: 0.25s; }
-.sandbox-popover.show .sandbox-popover-item:nth-child(6) { animation-delay: 0.3s; }
-
-        .sandbox-popover-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .sandbox-popover-item .icon {
-            margin-right: 8px;
-        }
-
-        .sandbox-popover-divider {
-            height: 1px;
-            background-color: #e0e0e0;
-            margin: 0;
-            opacity: 0;
-            transform: scaleX(0);
-        }
-
-        .sandbox-popover.show .sandbox-popover-divider {
-            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            animation-delay: 0.15s;
-        }
-
-        .nav-panel.expanded ~ .expandButton-container {
-            left: 305px; /* 65px (account panel) + 240px (expanded nav panel) + 8px offset - 8px container padding */
-        }
-
-        .account-panel.expanded ~ .nav-panel ~ .expandButton-container {
-            left: 305px; /* 240px (expanded account panel) + 65px (nav panel) + 8px offset - 8px container padding */
-        }
-
-        .nav-panel.expanded, .account-panel.expanded {
-            width: 240px;
-        }
-
-        .nav-panel.expanded {
-            overflow: visible;
-        }
-
-        .nav-content {
-            flex-grow: 1;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .nav-panel .nav-content {
-            overflow: hidden;
-        }
-
-        .nav-panel.expanded .nav-content {
-            overflow: visible;
-        }
-
-        .account-panel .nav-content {
-            overflow: visible;
-        }
-
-        /* Unified Navigation Component */
-        .nav-component {
-            display: flex;
-            align-items: center;
-            padding: 4px 0;
-            margin: 0;
-            cursor: pointer;
-            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            white-space: nowrap;
-            background-color: transparent;
-            border-radius: 6px;
-        }
-
-
-
-        /* Hover State - Base for all nav components */
-        .nav-component:hover::before,
-        .nav-component.popover-active::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            right: -8px;
-            bottom: -2px;
-            left: -8px;
-            background-color: #F5F6F8;
-            border-radius: 8px;
-            z-index: -1;
-        }
-
-        /* Account panel hover - darker background */
-        .account-panel .nav-component:hover::before,
-        .account-panel .nav-component.popover-active::before {
-            background-color: #e9ecef;
-        }
-
-        /* Active State - Only for nav-panel items */
-        .nav-panel .nav-component.active {
-            background-color: transparent;
-        }
-
-        .nav-panel .nav-component.active .icon,
-        .nav-panel .nav-component.active .nav-text {
-            color: #533AFD;
-        }
-
-        .nav-panel .nav-component.active .nav-text {
-            font-weight: 500;
-        }
-
-        .nav-panel .nav-component.active .placeholder-circle {
-            background-color: #533AFD;
-        }
-
-        .nav-panel .nav-component.active .company-icon {
-            background-color: #533AFD;
-            color: white;
-        }
-
-        /* Generic Icon active state - Only for nav-panel items */
-        .nav-panel .nav-component.active .genericIcon {
-            color: #533AFD;
-        }
-
-        .nav-panel .nav-component.active .genericIcon .icon-shape {
-            background-color: #533AFD;
-        }
-
-        /* Icon Shape for Generic Icons */
-        .genericIcon {
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .icon-shape {
-            width: 8px;
-            height: 8px;
-            background-color: #666;
-            border-radius: 2px;
-        }
-
-        /* Account Avatar does NOT change color when selected */
-
-        .nav-component .icon {
-            width: 24px;
-            height: 24px;
-            color: #666;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        /* Account Avatar - always 24px, doesn't change color when selected */
-        .accountAvatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background-color: #F5F6F8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 10px;
-            color: white;
-        }
-
-        /* Account Avatar Color Variants */
-        .accountAvatar.color-1 { background-color: #8B5CF6; }
-        .accountAvatar.color-2 { background-color: #EF4444; }
-        .accountAvatar.color-3 { background-color: #10B981; }
-        .accountAvatar.color-4 { background-color: #F59E0B; }
-        .accountAvatar.color-5 { background-color: #3B82F6; }
-        .accountAvatar.color-6 { background-color: #EC4899; }
-
-        /* Account subtitle colors to match account icon colors */
-        .account-subtitle-color-1 { color: #8B5CF6; }
-        .account-subtitle-color-2 { color: #EF4444; }
-        .account-subtitle-color-3 { color: #10B981; }
-        .account-subtitle-color-4 { color: #F59E0B; }
-        .account-subtitle-color-5 { color: #3B82F6; }
-        .account-subtitle-color-6 { color: #EC4899; }
-
-        /* Active Account Stroke */
-        .active-account-stroke {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 1px solid #533AFD;
-            border-radius: 4px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* Match stroke color to account avatar color */
-        .accountAvatar.color-1 + .active-account-stroke { border-color: #8B5CF6; }
-        .accountAvatar.color-2 + .active-account-stroke { border-color: #EF4444; }
-        .accountAvatar.color-3 + .active-account-stroke { border-color: #10B981; }
-        .accountAvatar.color-4 + .active-account-stroke { border-color: #F59E0B; }
-        .accountAvatar.color-5 + .active-account-stroke { border-color: #3B82F6; }
-        .accountAvatar.color-6 + .active-account-stroke { border-color: #EC4899; }
-
-        /* Generic Icon - 24px container with 16px icon centered */
-        /* Can contain either SVG illustrations or generic circle fallback */
-        .genericIcon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-        }
-
-        /* Generic circle fallback when no specific icon is provided */
-        .genericIcon .icon-shape {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background-color: #D1D5DB;
-        }
-
-        /* SVG illustrations - always 16px and centered */
-        .icon .genericIcon svg {
-            width: 16px !important;
-            height: 16px !important;
-            fill: none;
-            stroke: #474E5A;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* Fill-based icons (organization, settings, sandbox) - no stroke */
-        .icon .genericIcon svg[viewBox="0 0 16 16"] {
-            fill: #474E5A;
-            stroke: none;
-            stroke-width: 0;
-        }
-
-        /* Legacy placeholder circle for backward compatibility */
-        .placeholder-circle {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background-color: #F5F6F8;
-        }
-
-        .company-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background-color: #F5F6F8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .nav-component .nav-text {
-            margin-left: 8px;
-            color: var(--Text-Default, #333);
-            font-family: "SF Pro Text";
-            font-size: 14px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: 20px; /* 142.857% */
-            letter-spacing: -0.15px;
-            opacity: 0;
-            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .nav-panel.expanded .nav-component .nav-text, 
-        .account-panel.expanded .nav-component .nav-text {
-            opacity: 1;
-        }
-
-        /* Account switcher text truncation */
-        #accountSwitcherText {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 120px; /* Limit width when panel is closed */
-            font-weight: 500; /* Medium font weight */
-        }
-
-        /* When panel is expanded, allow full width */
-        .nav-panel.expanded #accountSwitcherText {
-            max-width: none;
-        }
-
-        /* Add space below account switcher */
-        #accountSwitcher {
-            margin-bottom: 16px;
-        }
-
-        /* Sandbox Mode Indicator Bar */
-        .sandbox-indicator-bar {
-            position: fixed;
-            top: 0;
-            left: 65px;  /* Start after collapsed account panel, extend over nav panel */
-            width: calc(100% - 65px);  /* Extend over nav panel and main content */
-            height: 32px;
-            background-color: #0E3359;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 9999;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1), width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            padding: 0 16px;
-            box-sizing: border-box;
-        }
-
-        /* Adjust bar position when account panel is expanded */
-        .dashboard.sandbox-mode.account-panel-expanded .sandbox-indicator-bar {
-            left: 240px;  /* Start after expanded account panel, extend over nav panel and main content */
-            width: calc(100% - 240px);  /* Extend over nav panel and main content */
-        }
-
-        /* Adjust nav panel and main content top margin when sandbox bar is visible */
-        .dashboard.sandbox-mode .nav-panel,
-        .dashboard.sandbox-mode .main-content {
-            margin-top: 32px;
-        }
-
-        /* Remove general dashboard padding and apply specific spacing */
-        .dashboard.sandbox-mode {
-            padding-top: 0;
-        }
-
-        .sandbox-indicator-bar .exit-link {
-            position: absolute;
-            left: 16px;
-            color: white;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
-            display: flex;
-            align-items: center;
-        }
-
-        .sandbox-indicator-bar .exit-link .icon {
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .sandbox-indicator-bar .exit-link:hover {
-            opacity: 0.8;
-            text-decoration: underline;
-        }
-
-        .sandbox-indicator-bar .exit-link .icon .genericIcon svg {
-            stroke: white;
-        }
-
-        /* Navigation Divider */
-        .nav-divider {
-            height: 1px;
-            background-color: #e0e0e0;
-            margin: 7.5px 0;
-            width: 100%;
-        }
-
-        /* Navigation Group */
-        .nav-group {
-            width: 100%;
-        }
-
-        .nav-group:first-child {
-            flex: 1;
-        }
-
-        .nav-group-bottom {
-            margin-top: auto;
-            border-top: 1px solid #e0e0e0;
-            padding-top: 8px;
-        }
-
-
-
-        /* Main Content Area */
-        .main-content {
-            flex: 1;
-            background: #ffffff;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            transition: margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .header {
-            height: 60px;
-            padding: 0 32px;
-            background: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .searchField {
-            width: 360px;
-            height: 36px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin-right: auto;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-circle {
-            width: 16px;
-            height: 16px;
-            background-color: #D1D5DB;
-            border-radius: 50%;
-        }
-
-
-
-
-
-
-
-        .nav-component .dropdown-icon {
-            width: 16px;
-            height: 16px;
-            color: #666;
-            flex-shrink: 0;
-            margin-left: auto;
-            opacity: 0;
-            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .nav-panel.expanded .nav-component .dropdown-icon {
-            opacity: 1;
-        }
-
-        .nav-component .dropdown-icon svg {
-            width: 16px;
-            height: 16px;
-            fill: none;
-            stroke: #474E5A;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-
-
-        .content-area {
-            flex: 1;
-            padding: 0 32px 32px 32px;
-            overflow-y: auto;
-        }
-
-        .placeholder-block {
-            background: #f8f9fa;
-            border-radius: 12px;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .placeholder-content {
-            text-align: center;
-            color: #666;
-        }
-
-        .placeholder-content h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .placeholder-content p {
-            font-size: 16px;
-            color: #666;
-        }
-
-
-
-        /* Icons */
-        .icon svg {
-            width: 24px;
-            height: 24px;
-            fill: none;
-            stroke: #474E5A;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-panel {
-                position: fixed;
-                left: -60px;
-                z-index: 1000;
-            }
-
-            .account-panel {
-                position: fixed;
-                left: -120px;
-                z-index: 999;
-            }
-
-            .nav-panel.mobile-open {
-                left: 0;
-            }
-
-            .account-panel.mobile-open {
-                left: 0;
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-
-            .header {
-                padding: 0 20px;
-            }
-
-            .content-area {
-                padding: 0 20px 20px 20px;
-            }
-
-            .nav-panel, .account-panel {
-                padding: 12px 16px;
-            }
-
-            .nav-component {
-                padding: 8px 4px;
-                margin: -4px;
-            }
-
-            .expandButton-container {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
 
@@ -1020,9 +42,9 @@
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10ZM8 11.5C9.933 11.5 11.5 9.933 11.5 8C11.5 6.067 9.933 4.5 8 4.5C6.067 4.5 4.5 6.067 4.5 8C4.5 9.933 6.067 11.5 8 11.5Z" fill="#474E5A"/>
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.40922 14.5H8.59086L8.64289 13.6676C8.68608 12.9765 9.12646 12.4062 9.7222 12.1591C10.3207 11.9109 11.0352 12.0054 11.553 12.4622L12.1784 13.014L13.014 12.1785L12.4622 11.5531C12.0053 11.0354 11.9109 10.3208 12.1591 9.72222C12.4062 9.12646 12.9766 8.68604 13.6677 8.64285L14.5 8.59082V7.40918L13.6676 7.35715C12.9766 7.31396 12.4062 6.87355 12.1592 6.27781C11.9109 5.67926 12.0054 4.9647 12.4622 4.44695L13.0139 3.82163L12.1784 2.98608L11.5531 3.53784C11.0353 3.99467 10.3208 4.0891 9.72223 3.84089C9.12649 3.59384 8.68608 3.02347 8.64289 2.33241L8.59086 1.5H7.40922L7.35719 2.33236C7.314 3.02345 6.87358 3.59384 6.27783 3.8409C5.67925 4.08913 4.96467 3.99471 4.4469 3.53785L3.82157 2.98609L2.98602 3.82164L3.53788 4.44708C3.99469 4.9648 4.08912 5.67931 3.84092 6.27784C3.59388 6.87357 3.02353 7.31396 2.33249 7.35715L1.50004 7.40917V8.59082L2.33245 8.64285C3.02351 8.68604 3.59388 9.12643 3.84093 9.72218C4.08914 10.3207 3.99471 11.0353 3.53789 11.553L2.98601 12.1785L3.82156 13.014L4.44701 12.4622C4.96475 12.0053 5.6793 11.9109 6.27785 12.1591C6.8736 12.4062 7.314 12.9765 7.35719 13.6676L7.40922 14.5ZM4.5139 14.3779C4.57755 14.3386 4.6387 14.2934 4.69659 14.2424L5.43944 13.5869C5.51171 13.5231 5.61422 13.5078 5.70326 13.5447C5.79223 13.5816 5.8541 13.665 5.86011 13.7612L5.9219 14.7498C5.92672 14.8269 5.93801 14.902 5.95523 14.9748C5.96532 15.0175 5.97744 15.0593 5.99149 15.1002C6.17214 15.6264 6.67098 16 7.25264 16H8.74744C9.32907 16 9.82789 15.6264 10.0086 15.1003C10.0226 15.0594 10.0347 15.0175 10.0448 14.9749C10.0621 14.9021 10.0734 14.8269 10.0782 14.7498L10.14 13.7611C10.146 13.665 10.2078 13.5816 10.2968 13.5447C10.3858 13.5078 10.4883 13.5232 10.5605 13.5869L11.3034 14.2424C11.3613 14.2935 11.4225 14.3387 11.4861 14.378C11.5234 14.401 11.5616 14.422 11.6004 14.441C12.1002 14.6852 12.7171 14.5967 13.1284 14.1854L14.1853 13.1284C14.5967 12.7171 14.6852 12.1002 14.4409 11.6004C14.4219 11.5616 14.4009 11.5234 14.3779 11.4862C14.3386 11.4225 14.2934 11.3614 14.2423 11.3035L13.5869 10.5607C13.5232 10.4884 13.5078 10.3859 13.5447 10.2968C13.5816 10.2078 13.6651 10.1459 13.7612 10.1399L14.7499 10.0781C14.8269 10.0733 14.9021 10.062 14.9748 10.0448C15.0175 10.0347 15.0593 10.0226 15.1002 10.0086C15.6264 9.82795 16 9.32909 16 8.7474V7.2526C16 6.67093 15.6264 6.17209 15.1003 5.99144C15.0594 5.9774 15.0175 5.96527 14.9749 5.95519C14.9021 5.93797 14.8269 5.92668 14.7499 5.92186L13.7612 5.86007C13.6651 5.85406 13.5816 5.79219 13.5447 5.70321C13.5078 5.61417 13.5232 5.51166 13.587 5.43938L14.2423 4.69666C14.2934 4.63873 14.3386 4.57754 14.3779 4.51384C14.4009 4.47658 14.4219 4.43846 14.4409 4.39963C14.6852 3.89987 14.5966 3.28297 14.1853 2.87168L13.1283 1.8147C12.7171 1.40342 12.1002 1.31487 11.6004 1.55913C11.5616 1.57811 11.5235 1.5991 11.4862 1.6221C11.4225 1.66142 11.3613 1.70662 11.3034 1.75773L10.5606 2.41309C10.4884 2.47686 10.3859 2.49223 10.2968 2.4553C10.2078 2.41841 10.146 2.33497 10.14 2.23884L10.0782 1.25016C10.0734 1.17312 10.0621 1.09795 10.0449 1.02516C10.0348 0.982504 10.0226 0.940667 10.0086 0.899751C9.82794 0.373623 9.3291 0 8.74744 0H7.25264C6.67095 0 6.17209 0.373663 5.99146 0.899834C5.97742 0.940737 5.9653 0.982562 5.95522 1.0252C5.93801 1.09798 5.92672 1.17314 5.92191 1.25016L5.86012 2.2388C5.85411 2.33495 5.79222 2.41842 5.70322 2.45532C5.61416 2.49225 5.51163 2.47688 5.43933 2.41309L4.6966 1.75774C4.6387 1.70665 4.57753 1.66146 4.51385 1.62215C4.4766 1.59915 4.43848 1.57817 4.39966 1.55919C3.89989 1.31487 3.28294 1.40341 2.87163 1.81472L1.81465 2.8717C1.40337 3.28298 1.31482 3.89987 1.55907 4.39963C1.57806 4.43848 1.59906 4.47662 1.62207 4.5139C1.66138 4.57758 1.70658 4.63876 1.75767 4.69667L2.41312 5.43951C2.47688 5.51177 2.49224 5.61425 2.45533 5.70326C2.41845 5.79221 2.33503 5.85406 2.23892 5.86007L1.2502 5.92186C1.17315 5.92668 1.09796 5.93797 1.02516 5.9552C0.982493 5.96529 0.940644 5.97742 0.899716 5.99147C0.373629 6.17215 4.19617e-05 6.67097 4.19617e-05 7.2526V8.7474C4.19617e-05 9.32905 0.373661 9.82789 0.899783 10.0085C0.9407 10.0226 0.982539 10.0347 1.0252 10.0448C1.09799 10.062 1.17316 10.0733 1.2502 10.0781L2.23889 10.1399C2.33501 10.1459 2.41845 10.2078 2.45534 10.2968C2.49226 10.3858 2.4769 10.4883 2.41313 10.5606L1.75766 11.3034C1.70659 11.3613 1.66141 11.4225 1.62211 11.4861C1.5991 11.5234 1.5781 11.5615 1.55911 11.6004C1.31479 12.1001 1.40332 12.7171 1.81464 13.1284L2.87162 14.1854C3.28293 14.5967 3.89989 14.6852 4.39967 14.4409C4.43851 14.4219 4.47663 14.4009 4.5139 14.3779Z" fill="#474E5A"/>
-                                </svg>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10ZM8 11.5C9.933 11.5 11.5 9.933 11.5 8C11.5 6.067 9.933 4.5 8 4.5C6.067 4.5 4.5 6.067 4.5 8C4.5 9.933 6.067 11.5 8 11.5Z" fill="#596171"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.40922 14.5H8.59086L8.64289 13.6676C8.68608 12.9765 9.12646 12.4062 9.7222 12.1591C10.3207 11.9109 11.0352 12.0054 11.553 12.4622L12.1784 13.014L13.014 12.1785L12.4622 11.5531C12.0053 11.0354 11.9109 10.3208 12.1591 9.72222C12.4062 9.12646 12.9766 8.68604 13.6677 8.64285L14.5 8.59082V7.40918L13.6676 7.35715C12.9766 7.31396 12.4062 6.87355 12.1592 6.27781C11.9109 5.67926 12.0054 4.9647 12.4622 4.44695L13.0139 3.82163L12.1784 2.98608L11.5531 3.53784C11.0353 3.99467 10.3208 4.0891 9.72223 3.84089C9.12649 3.59384 8.68608 3.02347 8.64289 2.33241L8.59086 1.5H7.40922L7.35719 2.33236C7.314 3.02345 6.87358 3.59384 6.27783 3.8409C5.67925 4.08913 4.96467 3.99471 4.4469 3.53785L3.82157 2.98609L2.98602 3.82164L3.53788 4.44708C3.99469 4.9648 4.08912 5.67931 3.84092 6.27784C3.59388 6.87357 3.02353 7.31396 2.33249 7.35715L1.50004 7.40917V8.59082L2.33245 8.64285C3.02351 8.68604 3.59388 9.12643 3.84093 9.72218C4.08914 10.3207 3.99471 11.0353 3.53789 11.553L2.98601 12.1785L3.82156 13.014L4.44701 12.4622C4.96475 12.0053 5.6793 11.9109 6.27785 12.1591C6.8736 12.4062 7.314 12.9765 7.35719 13.6676L7.40922 14.5ZM4.5139 14.3779C4.57755 14.3386 4.6387 14.2934 4.69659 14.2424L5.43944 13.5869C5.51171 13.5231 5.61422 13.5078 5.70326 13.5447C5.79223 13.5816 5.8541 13.665 5.86011 13.7612L5.9219 14.7498C5.92672 14.8269 5.93801 14.902 5.95523 14.9748C5.96532 15.0175 5.97744 15.0593 5.99149 15.1002C6.17214 15.6264 6.67098 16 7.25264 16H8.74744C9.32907 16 9.82789 15.6264 10.0086 15.1003C10.0226 15.0594 10.0347 15.0175 10.0448 14.9749C10.0621 14.9021 10.0734 14.8269 10.0782 14.7498L10.14 13.7611C10.146 13.665 10.2078 13.5816 10.2968 13.5447C10.3858 13.5078 10.4883 13.5232 10.5605 13.5869L11.3034 14.2424C11.3613 14.2935 11.4225 14.3387 11.4861 14.378C11.5234 14.401 11.5616 14.422 11.6004 14.441C12.1002 14.6852 12.7171 14.5967 13.1284 14.1854L14.1853 13.1284C14.5967 12.7171 14.6852 12.1002 14.4409 11.6004C14.4219 11.5616 14.4009 11.5234 14.3779 11.4862C14.3386 11.4225 14.2934 11.3614 14.2423 11.3035L13.5869 10.5607C13.5232 10.4884 13.5078 10.3859 13.5447 10.2968C13.5816 10.2078 13.6651 10.1459 13.7612 10.1399L14.7499 10.0781C14.8269 10.0733 14.9021 10.062 14.9748 10.0448C15.0175 10.0347 15.0593 10.0226 15.1002 10.0086C15.6264 9.82795 16 9.32909 16 8.7474V7.2526C16 6.67093 15.6264 6.17209 15.1003 5.99144C15.0594 5.9774 15.0175 5.96527 14.9749 5.95519C14.9021 5.93797 14.8269 5.92668 14.7499 5.92186L13.7612 5.86007C13.6651 5.85406 13.5816 5.79219 13.5447 5.70321C13.5078 5.61417 13.5232 5.51166 13.587 5.43938L14.2423 4.69666C14.2934 4.63873 14.3386 4.57754 14.3779 4.51384C14.4009 4.47658 14.4219 4.43846 14.4409 4.39963C14.6852 3.89987 14.5966 3.28297 14.1853 2.87168L13.1283 1.8147C12.7171 1.40342 12.1002 1.31487 11.6004 1.55913C11.5616 1.57811 11.5235 1.5991 11.4862 1.6221C11.4225 1.66142 11.3613 1.70662 11.3034 1.75773L10.5606 2.41309C10.4884 2.47686 10.3859 2.49223 10.2968 2.4553C10.2078 2.41841 10.146 2.33497 10.14 2.23884L10.0782 1.25016C10.0734 1.17312 10.0621 1.09795 10.0449 1.02516C10.0348 0.982504 10.0226 0.940667 10.0086 0.899751C9.82794 0.373623 9.3291 0 8.74744 0H7.25264C6.67095 0 6.17209 0.373663 5.99146 0.899834C5.97742 0.940737 5.9653 0.982562 5.95522 1.0252C5.93801 1.09798 5.92672 1.17314 5.92191 1.25016L5.86012 2.2388C5.85411 2.33495 5.79222 2.41842 5.70322 2.45532C5.61416 2.49225 5.51163 2.47688 5.43933 2.41309L4.6966 1.75774C4.6387 1.70665 4.57753 1.66146 4.51385 1.62215C4.4766 1.59915 4.43848 1.57817 4.39966 1.55919C3.89989 1.31487 3.28294 1.40341 2.87163 1.81472L1.81465 2.8717C1.40337 3.28298 1.31482 3.89987 1.55907 4.39963C1.57806 4.43848 1.59906 4.47662 1.62207 4.5139C1.66138 4.57758 1.70658 4.63876 1.75767 4.69667L2.41312 5.43951C2.47688 5.51177 2.49224 5.61425 2.45533 5.70326C2.41845 5.79221 2.33503 5.85406 2.23892 5.86007L1.2502 5.92186C1.17315 5.92668 1.09796 5.93797 1.02516 5.9552C0.982493 5.96529 0.940644 5.97742 0.899716 5.99147C0.373629 6.17215 4.19617e-05 6.67097 4.19617e-05 7.2526V8.7474C4.19617e-05 9.32905 0.373661 9.82789 0.899783 10.0085C0.9407 10.0226 0.982539 10.0347 1.0252 10.0448C1.09799 10.062 1.17316 10.0733 1.2502 10.0781L2.23889 10.1399C2.33501 10.1459 2.41845 10.2078 2.45534 10.2968C2.49226 10.3858 2.4769 10.4883 2.41313 10.5606L1.75766 11.3034C1.70659 11.3613 1.66141 11.4225 1.62211 11.4861C1.5991 11.5234 1.5781 11.5615 1.55911 11.6004C1.31479 12.1001 1.40332 12.7171 1.81464 13.1284L2.87162 14.1854C3.28293 14.5967 3.89989 14.6852 4.39967 14.4409C4.43851 14.4219 4.47663 14.4009 4.5139 14.3779Z" fill="#596171"/>
+                    </svg>
                             </div>
                         </div>
                     <span class="nav-text">Settings</span>
@@ -1032,8 +54,8 @@
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.09793 1.68763C7.36276 1.56405 7.65145 1.5 7.9437 1.5H8.0563C8.34855 1.5 8.63724 1.56405 8.90207 1.68763L14.8458 4.46136C15.5499 4.78996 16 5.49668 16 6.27373V9.76393C16 10.5215 15.572 11.214 14.8944 11.5528L9.63344 14.1833C9.21687 14.3916 8.75753 14.5 8.2918 14.5H7.7082C7.24247 14.5 6.78313 14.3916 6.36656 14.1833L1.10557 11.5528C0.428006 11.214 0 10.5215 0 9.76393V6.27373C0 5.49668 0.45008 4.78996 1.15423 4.46136L7.09793 1.68763ZM14.5 7.08859V9.76393C14.5 9.95332 14.393 10.1264 14.2236 10.2111L8.96262 12.8416C8.89387 12.876 8.82279 12.9049 8.75004 12.9283V9.96357L14.5 7.08859ZM13.9375 5.69279L11.4552 6.93393L8.60002 5.61615V3.20197L13.9375 5.69279ZM7.40002 3.20195L2.06255 5.69277L4.5448 6.93389L7.40002 5.6161V3.20195ZM8.00004 8.66152L10.0807 7.62119L7.99997 6.66085L5.91931 7.62115L8.00004 8.66152ZM1.5 7.08855L7.25004 9.96357V12.9283C7.17726 12.905 7.10616 12.876 7.03738 12.8416L1.77639 10.2111C1.607 10.1264 1.5 9.95332 1.5 9.76393V7.08855Z" fill="#474E5A"/>
-                                </svg>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.09793 1.68763C7.36276 1.56405 7.65145 1.5 7.9437 1.5H8.0563C8.34855 1.5 8.63724 1.56405 8.90207 1.68763L14.8458 4.46136C15.5499 4.78996 16 5.49668 16 6.27373V9.76393C16 10.5215 15.572 11.214 14.8944 11.5528L9.63344 14.1833C9.21687 14.3916 8.75753 14.5 8.2918 14.5H7.7082C7.24247 14.5 6.78313 14.3916 6.36656 14.1833L1.10557 11.5528C0.428006 11.214 0 10.5215 0 9.76393V6.27373C0 5.49668 0.45008 4.78996 1.15423 4.46136L7.09793 1.68763ZM14.5 7.08859V9.76393C14.5 9.95332 14.393 10.1264 14.2236 10.2111L8.96262 12.8416C8.89387 12.876 8.82279 12.9049 8.75004 12.9283V9.96357L14.5 7.08859ZM13.9375 5.69279L11.4552 6.93393L8.60002 5.61615V3.20197L13.9375 5.69279ZM7.40002 3.20195L2.06255 5.69277L4.5448 6.93389L7.40002 5.6161V3.20195ZM8.00004 8.66152L10.0807 7.62119L7.99997 6.66085L5.91931 7.62115L8.00004 8.66152ZM1.5 7.08855L7.25004 9.96357V12.9283C7.17726 12.905 7.10616 12.876 7.03738 12.8416L1.77639 10.2111C1.607 10.1264 1.5 9.95332 1.5 9.76393V7.08855Z" fill="#596171"/>
+                    </svg>
                             </div>
                         </div>
                     <span class="nav-text">Switch to sandbox</span>
@@ -1058,8 +80,8 @@
                     <div class="nav-component" id="createTrigger" data-tooltip="Create">
                         <div class="icon">
                             <div class="genericIcon">
-                                <svg viewBox="0 0 24 24" width="16" height="16">
-                                    <path d="M12 5v14m-7-7h14"/>
+                                <svg viewBox="0 0 16 16" width="16" height="16">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0.25C8.48325 0.25 8.875 0.641751 8.875 1.125V7.125H14.875C15.3582 7.125 15.75 7.51675 15.75 8C15.75 8.48325 15.3582 8.875 14.875 8.875H8.875V14.875C8.875 15.3582 8.48325 15.75 8 15.75C7.51675 15.75 7.125 15.3582 7.125 14.875V8.875H1.125C0.641751 8.875 0.25 8.48325 0.25 8C0.25 7.51675 0.641751 7.125 1.125 7.125H7.125V1.125C7.125 0.641751 7.51675 0.25 8 0.25Z" fill="#596171"/>
                     </svg>
                 </div>
             </div>
@@ -1072,10 +94,10 @@
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.5 14.4H13.5C13.7209 14.4 13.9 14.2209 13.9 14C13.9 12.1222 12.3778 10.6 10.5 10.6H5.5C3.62223 10.6 2.1 12.1222 2.1 14C2.1 14.2209 2.27909 14.4 2.5 14.4ZM2.5 16H13.5C14.6046 16 15.5 15.1046 15.5 14C15.5 11.2386 13.2614 9 10.5 9H5.5C2.73858 9 0.5 11.2386 0.5 14C0.5 15.1046 1.39543 16 2.5 16Z" fill="#474E5A"/>
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 6.4C9.32548 6.4 10.4 5.32548 10.4 4C10.4 2.67452 9.32548 1.6 8 1.6C6.67452 1.6 5.6 2.67452 5.6 4C5.6 5.32548 6.67452 6.4 8 6.4ZM8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="#474E5A"/>
-                                </svg>
-                            </div>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.5 14.4H13.5C13.7209 14.4 13.9 14.2209 13.9 14C13.9 12.1222 12.3778 10.6 10.5 10.6H5.5C3.62223 10.6 2.1 12.1222 2.1 14C2.1 14.2209 2.27909 14.4 2.5 14.4ZM2.5 16H13.5C14.6046 16 15.5 15.1046 15.5 14C15.5 11.2386 13.2614 9 10.5 9H5.5C2.73858 9 0.5 11.2386 0.5 14C0.5 15.1046 1.39543 16 2.5 16Z" fill="#596171"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 6.4C9.32548 6.4 10.4 5.32548 10.4 4C10.4 2.67452 9.32548 1.6 8 1.6C6.67452 1.6 5.6 2.67452 5.6 4C5.6 5.32548 6.67452 6.4 8 6.4ZM8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="#596171"/>
+                    </svg>
+                </div>
                         </div>
                         <span class="nav-text">username</span>
                     </div>
@@ -1084,10 +106,10 @@
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M1.875 1C1.39175 1 1 1.39175 1 1.875V14.125C1 14.6082 1.39175 15 1.875 15C2.35825 15 2.75 14.6082 2.75 14.125V1.875C2.75 1.39175 2.35825 1 1.875 1Z" fill="#474E5A"/>
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.77396 1.86689C8.42431 2.20047 8.41127 2.75433 8.74485 3.10399L12.5809 7.125H5.875C5.39175 7.125 5 7.51675 5 8C5 8.48325 5.39175 8.875 5.875 8.875H12.5134L8.75906 12.6315C8.41745 12.9733 8.4176 13.5273 8.75941 13.8689C9.10121 14.2105 9.65523 14.2103 9.99685 13.8685L15.2439 8.61854C15.4144 8.44793 15.5 8.22406 15.5 8C15.5 7.78272 15.4196 7.56526 15.2581 7.39601L10.0111 1.89601C9.67748 1.54636 9.12362 1.53332 8.77396 1.86689Z" fill="#474E5A"/>
-                                </svg>
-                            </div>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M1.875 1C1.39175 1 1 1.39175 1 1.875V14.125C1 14.6082 1.39175 15 1.875 15C2.35825 15 2.75 14.6082 2.75 14.125V1.875C2.75 1.39175 2.35825 1 1.875 1Z" fill="#596171"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.77396 1.86689C8.42431 2.20047 8.41127 2.75433 8.74485 3.10399L12.5809 7.125H5.875C5.39175 7.125 5 7.51675 5 8C5 8.48325 5.39175 8.875 5.875 8.875H12.5134L8.75906 12.6315C8.41745 12.9733 8.4176 13.5273 8.75941 13.8689C9.10121 14.2105 9.65523 14.2103 9.99685 13.8685L15.2439 8.61854C15.4144 8.44793 15.5 8.22406 15.5 8C15.5 7.78272 15.4196 7.56526 15.2581 7.39601L10.0111 1.89601C9.67748 1.54636 9.12362 1.53332 8.77396 1.86689Z" fill="#596171"/>
+                    </svg>
+                </div>
                         </div>
                         <span class="nav-text">Sign out</span>
                     </div>
@@ -1104,13 +126,13 @@
                     <div class="icon">
                         <div class="genericIcon">
                             <svg viewBox="0 0 16 16" width="16" height="16">
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                                <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                                <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                                <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                                <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
-                            </svg>
-                        </div>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                                <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                                <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                                <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                                <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
+                    </svg>
+                </div>
                     </div>
                     <span class="nav-text" id="accountSwitcherText">Acme Financial Services Corporation International Holdings Limited</span>
                     <div class="dropdown-icon">
@@ -1271,8 +293,8 @@
             <div class="create-popover-item">
                 <div class="icon">
                     <div class="genericIcon">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <path d="M12 5v14m-7-7h14"/>
+                        <svg viewBox="0 0 16 16" width="16" height="16">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0.25C8.48325 0.25 8.875 0.641751 8.875 1.125V7.125H14.875C15.3582 7.125 15.75 7.51675 15.75 8C15.75 8.48325 15.3582 8.875 14.875 8.875H8.875V14.875C8.875 15.3582 8.48325 15.75 8 15.75C7.51675 15.75 7.125 15.3582 7.125 14.875V8.875H1.125C0.641751 8.875 0.25 8.48325 0.25 8C0.25 7.51675 0.641751 7.125 1.125 7.125H7.125V1.125C7.125 0.641751 7.51675 0.25 8 0.25Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -1282,11 +304,11 @@
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -1299,12 +321,14 @@
     <div id="sandboxPopover" class="sandbox-popover">
         <div class="sandbox-popover-content" id="sandbox-popover-content">
             <!-- Account-specific sandboxes will be dynamically populated here -->
-            <div class="sandbox-popover-divider"></div>
+            <div class="sandbox-popover-divider-container">
+                <div class="sandbox-popover-divider"></div>
+            </div>
             <div id="createAccountSandbox" class="sandbox-popover-item" onclick="createNewSandbox('account')">
                 <div class="icon">
                     <div class="genericIcon">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <path d="M12 5v14m-7-7h14"/>
+                        <svg viewBox="0 0 16 16" width="16" height="16">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0.25C8.48325 0.25 8.875 0.641751 8.875 1.125V7.125H14.875C15.3582 7.125 15.75 7.51675 15.75 8C15.75 8.48325 15.3582 8.875 14.875 8.875H8.875V14.875C8.875 15.3582 8.48325 15.75 8 15.75C7.51675 15.75 7.125 15.3582 7.125 14.875V8.875H1.125C0.641751 8.875 0.25 8.48325 0.25 8C0.25 7.51675 0.641751 7.125 1.125 7.125H7.125V1.125C7.125 0.641751 7.51675 0.25 8 0.25Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -1314,11 +338,11 @@
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -1328,8 +352,8 @@
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10ZM8 11.5C9.933 11.5 11.5 9.933 11.5 8C11.5 6.067 9.933 4.5 8 4.5C6.067 4.5 4.5 6.067 4.5 8C4.5 9.933 6.067 11.5 8 11.5Z" fill="#474E5A"/>
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.40922 14.5H8.59086L8.64289 13.6676C8.68608 12.9765 9.12646 12.4062 9.7222 12.1591C10.3207 11.9109 11.0352 12.0054 11.553 12.4622L12.1784 13.014L13.014 12.1785L12.4622 11.5531C12.0053 11.0354 11.9109 10.3208 12.1591 9.72222C12.4062 9.12646 12.9766 8.68604 13.6677 8.64285L14.5 8.59082V7.40918L13.6676 7.35715C12.9766 7.31396 12.4062 6.87355 12.1592 6.27781C11.9109 5.67926 12.0054 4.9647 12.4622 4.44695L13.0139 3.82163L12.1784 2.98608L11.5531 3.53784C11.0353 3.99467 10.3208 4.0891 9.72223 3.84089C9.12649 3.59384 8.68608 3.02347 8.64289 2.33241L8.59086 1.5H7.40922L7.35719 2.33236C7.314 3.02345 6.87358 3.59384 6.27783 3.8409C5.67925 4.08913 4.96467 3.99471 4.4469 3.53785L3.82157 2.98609L2.98602 3.82164L3.53788 4.44708C3.99469 4.9648 4.08912 5.67931 3.84092 6.27784C3.59388 6.87357 3.02353 7.31396 2.33249 7.35715L1.50004 7.40917V8.59082L2.33245 8.64285C3.02351 8.68604 3.59388 9.12643 3.84093 9.72218C4.08914 10.3207 3.99471 11.0353 3.53789 11.553L2.98601 12.1785L3.82156 13.014L4.44701 12.4622C4.96475 12.0053 5.6793 11.9109 6.27785 12.1591C6.8736 12.4062 7.314 12.9765 7.35719 13.6676L7.40922 14.5ZM4.5139 14.3779C4.57755 14.3386 4.6387 14.2934 4.69659 14.2424L5.43944 13.5869C5.51171 13.5231 5.61422 13.5078 5.70326 13.5447C5.79223 13.5816 5.8541 13.665 5.86011 13.7612L5.9219 14.7498C5.92672 14.8269 5.93801 14.902 5.95523 14.9748C5.96532 15.0175 5.97744 15.0593 5.99149 15.1002C6.17214 15.6264 6.67098 16 7.25264 16H8.74744C9.32907 16 9.82789 15.6264 10.0086 15.1003C10.0226 15.0594 10.0347 15.0175 10.0448 14.9749C10.0621 14.9021 10.0734 14.8269 10.0782 14.7498L10.14 13.7611C10.146 13.665 10.2078 13.5816 10.2968 13.5447C10.3858 13.5078 10.4883 13.5232 10.5605 13.5869L11.3034 14.2424C11.3613 14.2935 11.4225 14.3387 11.4861 14.378C11.5234 14.401 11.5616 14.422 11.6004 14.441C12.1002 14.6852 12.7171 14.5967 13.1284 14.1854L14.1853 13.1284C14.5967 12.7171 14.6852 12.1002 14.4409 11.6004C14.4219 11.5616 14.4009 11.5234 14.3779 11.4862C14.3386 11.4225 14.2934 11.3614 14.2423 11.3035L13.5869 10.5607C13.5232 10.4884 13.5078 10.3859 13.5447 10.2968C13.5816 10.2078 13.6651 10.1459 13.7612 10.1399L14.7499 10.0781C14.8269 10.0733 14.9021 10.062 14.9748 10.0448C15.0175 10.0347 15.0593 10.0226 15.1002 10.0086C15.6264 9.82795 16 9.32909 16 8.7474V7.2526C16 6.67093 15.6264 6.17209 15.1003 5.99144C15.0594 5.9774 15.0175 5.96527 14.9749 5.95519C14.9021 5.93797 14.8269 5.92668 14.7499 5.92186L13.7612 5.86007C13.6651 5.85406 13.5816 5.79219 13.5447 5.70321C13.5078 5.61417 13.5232 5.51166 13.587 5.43938L14.2423 4.69666C14.2934 4.63873 14.3386 4.57754 14.3779 4.51384C14.4009 4.47658 14.4219 4.43846 14.4409 4.39963C14.6852 3.89987 14.5966 3.28297 14.1853 2.87168L13.1283 1.8147C12.7171 1.40342 12.1002 1.31487 11.6004 1.55913C11.5616 1.57811 11.5235 1.5991 11.4862 1.6221C11.4225 1.66142 11.3613 1.70662 11.3034 1.75773L10.5606 2.41309C10.4884 2.47686 10.3859 2.49223 10.2968 2.4553C10.2078 2.41841 10.146 2.33497 10.14 2.23884L10.0782 1.25016C10.0734 1.17312 10.0621 1.09795 10.0449 1.02516C10.0348 0.982504 10.0226 0.940667 10.0086 0.899751C9.82794 0.373623 9.3291 0 8.74744 0H7.25264C6.67095 0 6.17209 0.373663 5.99146 0.899834C5.97742 0.940737 5.9653 0.982562 5.95522 1.0252C5.93801 1.09798 5.92672 1.17314 5.92191 1.25016L5.86012 2.2388C5.85411 2.33495 5.79222 2.41842 5.70322 2.45532C5.61416 2.49225 5.51163 2.47688 5.43933 2.41309L4.6966 1.75774C4.6387 1.70665 4.57753 1.66146 4.51385 1.62215C4.4766 1.59915 4.43848 1.57817 4.39966 1.55919C3.89989 1.31487 3.28294 1.40341 2.87163 1.81472L1.81465 2.8717C1.40337 3.28298 1.31482 3.89987 1.55907 4.39963C1.57806 4.43848 1.59906 4.47662 1.62207 4.5139C1.66138 4.57758 1.70658 4.63876 1.75767 4.69667L2.41312 5.43951C2.47688 5.51177 2.49224 5.61425 2.45533 5.70326C2.41845 5.79221 2.33503 5.85406 2.23892 5.86007L1.2502 5.92186C1.17315 5.92668 1.09796 5.93797 1.02516 5.9552C0.982493 5.96529 0.940644 5.97742 0.899716 5.99147C0.373629 6.17215 4.19617e-05 6.67097 4.19617e-05 7.2526V8.7474C4.19617e-05 9.32905 0.373661 9.82789 0.899783 10.0085C0.9407 10.0226 0.982539 10.0347 1.0252 10.0448C1.09799 10.062 1.17316 10.0733 1.2502 10.0781L2.23889 10.1399C2.33501 10.1459 2.41845 10.2078 2.45534 10.2968C2.49226 10.3858 2.4769 10.4883 2.41313 10.5606L1.75766 11.3034C1.70659 11.3613 1.66141 11.4225 1.62211 11.4861C1.5991 11.5234 1.5781 11.5615 1.55911 11.6004C1.31479 12.1001 1.40332 12.7171 1.81464 13.1284L2.87162 14.1854C3.28293 14.5967 3.89989 14.6852 4.39967 14.4409C4.43851 14.4219 4.47663 14.4009 4.5139 14.3779Z" fill="#474E5A"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10ZM8 11.5C9.933 11.5 11.5 9.933 11.5 8C11.5 6.067 9.933 4.5 8 4.5C6.067 4.5 4.5 6.067 4.5 8C4.5 9.933 6.067 11.5 8 11.5Z" fill="#596171"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.40922 14.5H8.59086L8.64289 13.6676C8.68608 12.9765 9.12646 12.4062 9.7222 12.1591C10.3207 11.9109 11.0352 12.0054 11.553 12.4622L12.1784 13.014L13.014 12.1785L12.4622 11.5531C12.0053 11.0354 11.9109 10.3208 12.1591 9.72222C12.4062 9.12646 12.9766 8.68604 13.6677 8.64285L14.5 8.59082V7.40918L13.6676 7.35715C12.9766 7.31396 12.4062 6.87355 12.1592 6.27781C11.9109 5.67926 12.0054 4.9647 12.4622 4.44695L13.0139 3.82163L12.1784 2.98608L11.5531 3.53784C11.0353 3.99467 10.3208 4.0891 9.72223 3.84089C9.12649 3.59384 8.68608 3.02347 8.64289 2.33241L8.59086 1.5H7.40922L7.35719 2.33236C7.314 3.02345 6.87358 3.59384 6.27783 3.8409C5.67925 4.08913 4.96467 3.99471 4.4469 3.53785L3.82157 2.98609L2.98602 3.82164L3.53788 4.44708C3.99469 4.9648 4.08912 5.67931 3.84092 6.27784C3.59388 6.87357 3.02353 7.31396 2.33249 7.35715L1.50004 7.40917V8.59082L2.33245 8.64285C3.02351 8.68604 3.59388 9.12643 3.84093 9.72218C4.08914 10.3207 3.99471 11.0353 3.53789 11.553L2.98601 12.1785L3.82156 13.014L4.44701 12.4622C4.96475 12.0053 5.6793 11.9109 6.27785 12.1591C6.8736 12.4062 7.314 12.9765 7.35719 13.6676L7.40922 14.5ZM4.5139 14.3779C4.57755 14.3386 4.6387 14.2934 4.69659 14.2424L5.43944 13.5869C5.51171 13.5231 5.61422 13.5078 5.70326 13.5447C5.79223 13.5816 5.8541 13.665 5.86011 13.7612L5.9219 14.7498C5.92672 14.8269 5.93801 14.902 5.95523 14.9748C5.96532 15.0175 5.97744 15.0593 5.99149 15.1002C6.17214 15.6264 6.67098 16 7.25264 16H8.74744C9.32907 16 9.82789 15.6264 10.0086 15.1003C10.0226 15.0594 10.0347 15.0175 10.0448 14.9749C10.0621 14.9021 10.0734 14.8269 10.0782 14.7498L10.14 13.7611C10.146 13.665 10.2078 13.5816 10.2968 13.5447C10.3858 13.5078 10.4883 13.5232 10.5605 13.5869L11.3034 14.2424C11.3613 14.2935 11.4225 14.3387 11.4861 14.378C11.5234 14.401 11.5616 14.422 11.6004 14.441C12.1002 14.6852 12.7171 14.5967 13.1284 14.1854L14.1853 13.1284C14.5967 12.7171 14.6852 12.1002 14.4409 11.6004C14.4219 11.5616 14.4009 11.5234 14.3779 11.4862C14.3386 11.4225 14.2934 11.3614 14.2423 11.3035L13.5869 10.5607C13.5232 10.4884 13.5078 10.3859 13.5447 10.2968C13.5816 10.2078 13.6651 10.1459 13.7612 10.1399L14.7499 10.0781C14.8269 10.0733 14.9021 10.062 14.9748 10.0448C15.0175 10.0347 15.0593 10.0226 15.1002 10.0086C15.6264 9.82795 16 9.32909 16 8.7474V7.2526C16 6.67093 15.6264 6.17209 15.1003 5.99144C15.0594 5.9774 15.0175 5.96527 14.9749 5.95519C14.9021 5.93797 14.8269 5.92668 14.7499 5.92186L13.7612 5.86007C13.6651 5.85406 13.5816 5.79219 13.5447 5.70321C13.5078 5.61417 13.5232 5.51166 13.587 5.43938L14.2423 4.69666C14.2934 4.63873 14.3386 4.57754 14.3779 4.51384C14.4009 4.47658 14.4219 4.43846 14.4409 4.39963C14.6852 3.89987 14.5966 3.28297 14.1853 2.87168L13.1283 1.8147C12.7171 1.40342 12.1002 1.31487 11.6004 1.55913C11.5616 1.57811 11.5235 1.5991 11.4862 1.6221C11.4225 1.66142 11.3613 1.70662 11.3034 1.75773L10.5606 2.41309C10.4884 2.47686 10.3859 2.49223 10.2968 2.4553C10.2078 2.41841 10.146 2.33497 10.14 2.23884L10.0782 1.25016C10.0734 1.17312 10.0621 1.09795 10.0449 1.02516C10.0348 0.982504 10.0226 0.940667 10.0086 0.899751C9.82794 0.373623 9.3291 0 8.74744 0H7.25264C6.67095 0 6.17209 0.373663 5.99146 0.899834C5.97742 0.940737 5.9653 0.982562 5.95522 1.0252C5.93801 1.09798 5.92672 1.17314 5.92191 1.25016L5.86012 2.2388C5.85411 2.33495 5.79222 2.41842 5.70322 2.45532C5.61416 2.49225 5.51163 2.47688 5.43933 2.41309L4.6966 1.75774C4.6387 1.70665 4.57753 1.66146 4.51385 1.62215C4.4766 1.59915 4.43848 1.57817 4.39966 1.55919C3.89989 1.31487 3.28294 1.40341 2.87163 1.81472L1.81465 2.8717C1.40337 3.28298 1.31482 3.89987 1.55907 4.39963C1.57806 4.43848 1.59906 4.47662 1.62207 4.5139C1.66138 4.57758 1.70658 4.63876 1.75767 4.69667L2.41312 5.43951C2.47688 5.51177 2.49224 5.61425 2.45533 5.70326C2.41845 5.79221 2.33503 5.85406 2.23892 5.86007L1.2502 5.92186C1.17315 5.92668 1.09796 5.93797 1.02516 5.9552C0.982493 5.96529 0.940644 5.97742 0.899716 5.99147C0.373629 6.17215 4.19617e-05 6.67097 4.19617e-05 7.2526V8.7474C4.19617e-05 9.32905 0.373661 9.82789 0.899783 10.0085C0.9407 10.0226 0.982539 10.0347 1.0252 10.0448C1.09799 10.062 1.17316 10.0733 1.2502 10.0781L2.23889 10.1399C2.33501 10.1459 2.41845 10.2078 2.45534 10.2968C2.49226 10.3858 2.4769 10.4883 2.41313 10.5606L1.75766 11.3034C1.70659 11.3613 1.66141 11.4225 1.62211 11.4861C1.5991 11.5234 1.5781 11.5615 1.55911 11.6004C1.31479 12.1001 1.40332 12.7171 1.81464 13.1284L2.87162 14.1854C3.28293 14.5967 3.89989 14.6852 4.39967 14.4409C4.43851 14.4219 4.47663 14.4009 4.5139 14.3779Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -1549,10 +573,7 @@
                     dashboard.classList.remove('account-panel-expanded');
                 }
                 
-                // Update sandbox bar position if in sandbox mode
-                if (isInSandboxMode) {
-                    updateSandboxBarPosition();
-                }
+                // Sandbox bar positioning handled by CSS classes
             } else {
                 // Close navPanel if it's open
                 navPanel.classList.remove('expanded');
@@ -1566,10 +587,7 @@
                     dashboard.classList.remove('account-panel-expanded');
                 }
                 
-                // Update sandbox bar position if in sandbox mode
-                if (isInSandboxMode) {
-                    updateSandboxBarPosition();
-                }
+                // Sandbox bar positioning handled by CSS classes
             }
             
             // Update expand button tooltip text since navPanel is now closed
@@ -1600,11 +618,11 @@
                     // Close navPanel
                     navPanel.classList.remove('expanded');
                     dashboard.classList.remove('nav-panel-expanded');
-                } else {
-                    // Close accountPanel if it's open
-                    accountPanel.classList.remove('expanded');
+            } else {
+                // Close accountPanel if it's open
+                accountPanel.classList.remove('expanded');
                     dashboard.classList.remove('account-panel-expanded');
-                    navPanel.classList.toggle('expanded');
+                navPanel.classList.toggle('expanded');
                     dashboard.classList.add('nav-panel-expanded');
                 }
             }
@@ -1619,10 +637,7 @@
             // Update status indicator
             updateNavPanelStatus();
             
-            // Update sandbox bar position if in sandbox mode
-            if (isInSandboxMode) {
-                updateSandboxBarPosition();
-            }
+            // Sandbox bar positioning handled by CSS classes
         }
 
         // Update nav panel status indicator
@@ -1768,8 +783,7 @@
                 dashboard.classList.add('sandbox-mode');
             }
             
-            // Update sandbox bar position based on current account panel state
-            updateSandboxBarPosition();
+            // Sandbox bar positioning handled by CSS classes
             
             const accountSwitcher = document.getElementById('accountSwitcher');
             
@@ -1780,11 +794,11 @@
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                                    <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                                    <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                                    <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                                    <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                                    <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                                    <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                                    <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                                    <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                                 </svg>
                             </div>
                         </div>
@@ -1849,11 +863,11 @@
                     <div class="icon">
                         <div class="genericIcon">
                             <svg viewBox="0 0 16 16" width="16" height="16">
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                                <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                                <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                                <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                                <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                                <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                                <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                                <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                                <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                             </svg>
                         </div>
                     </div>
@@ -1923,11 +937,11 @@
                  <div class="icon">
                      <div class="genericIcon">
                          <svg viewBox="0 0 16 16" width="16" height="16">
-                             <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                             <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                             <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                             <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                             <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                             <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                             <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                             <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                             <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                             <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                          </svg>
                      </div>
                  </div>
@@ -1953,13 +967,13 @@
                  // Update tooltip for truncation
                  updateAccountSwitcherTooltip();
                  
-                                   // Update dashboard account subtitle with account count
-                  const accountSubtitle = document.getElementById('accountSubtitle');
-                  if (accountSubtitle) {
-                      const currentActiveAccount = document.getElementById('active-account');
-                      const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
-                      const accounts = organizationAccounts[organizationId] || [];
-                      accountSubtitle.textContent = `All accounts (${accounts.length})`;
+                 // Update dashboard account subtitle with account count
+                 const accountSubtitle = document.getElementById('accountSubtitle');
+                 if (accountSubtitle) {
+                     const currentActiveAccount = document.getElementById('active-account');
+                     const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
+                     const accounts = organizationAccounts[organizationId] || [];
+                     accountSubtitle.textContent = `All accounts (${accounts.length})`;
                       // Reset color for "All accounts" view
                       updateAccountSubtitleColor(null);
                   }
@@ -2017,10 +1031,10 @@
                      // Update tooltip for truncation
                      updateAccountSwitcherTooltip();
                      
-                                           // Update dashboard account subtitle
-                      const accountSubtitle = document.getElementById('accountSubtitle');
-                      if (accountSubtitle) {
-                          accountSubtitle.textContent = selectedAccountName;
+                     // Update dashboard account subtitle
+                     const accountSubtitle = document.getElementById('accountSubtitle');
+                     if (accountSubtitle) {
+                         accountSubtitle.textContent = selectedAccountName;
                           // Update subtitle color to match account icon color
                           const accountColor = this.getAttribute('data-account-color');
                           updateAccountSubtitleColor(accountColor);
@@ -2066,11 +1080,11 @@
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -2174,12 +1188,12 @@
                 });
                 
                 accountPopoverContent.appendChild(accountItem);
-            });
-            
-            // Add animation delays to all items
-            accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
-                item.style.animationDelay = `${(index + 1) * 0.05}s`;
-            });
+             });
+             
+             // Add animation delays to all items
+             accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
+                 item.style.animationDelay = `${(index + 1) * 0.05}s`;
+             });
         }
 
         // Update active business account function with account switcher update
@@ -2224,10 +1238,10 @@
             // businessAccountItem is the element that was clicked - update it with the previous active account data
             const clickedAccountAvatar = businessAccountItem.querySelector('.accountAvatar');
             const clickedAccountText = businessAccountItem.querySelector('.nav-text');
-            
-            clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
-            clickedAccountAvatar.textContent = currentActiveData.initials;
-            clickedAccountText.textContent = currentActiveData.name;
+                
+                clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+                clickedAccountAvatar.textContent = currentActiveData.initials;
+                clickedAccountText.textContent = currentActiveData.name;
             businessAccountItem.setAttribute('data-tooltip', currentActiveData.name);
             businessAccountItem.setAttribute('data-account-name', currentActiveData.name);
             businessAccountItem.setAttribute('data-account-initials', currentActiveData.initials);
@@ -2247,6 +1261,7 @@
                      accountSwitcher.style.display = 'flex';
                      populateAccountSwitcher(newActiveData.organization);
                      
+                     // Explicitly set account switcher to "All accounts" as default
                      accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                      accountSwitcherText.textContent = 'All accounts';
                      
@@ -2312,10 +1327,10 @@
              // accountItem is the element that was clicked - update it with the previous active account data
              const clickedAccountAvatar = accountItem.querySelector('.accountAvatar');
              const clickedAccountText = accountItem.querySelector('.nav-text');
-             
-             clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
-             clickedAccountAvatar.textContent = currentActiveData.initials;
-             clickedAccountText.textContent = currentActiveData.name;
+                 
+                 clickedAccountAvatar.className = `accountAvatar ${currentActiveData.color}`;
+                 clickedAccountAvatar.textContent = currentActiveData.initials;
+                 clickedAccountText.textContent = currentActiveData.name;
              accountItem.setAttribute('data-tooltip', currentActiveData.name);
              accountItem.setAttribute('data-account-name', currentActiveData.name);
              accountItem.setAttribute('data-account-initials', currentActiveData.initials);
@@ -2357,14 +1372,14 @@
                             showTooltip(this, tooltipText);
                         }
                     } else {
-                        // For navigation components, only show tooltip if panel is not expanded
-                        if (parentPanel) {
-                            if (!parentPanel.classList.contains('expanded') && !parentPanel.classList.contains('mobile-open')) {
-                                showTooltip(this, tooltipText);
-                            }
-                        } else {
-                            // For expand button, always show tooltip
+                    // For navigation components, only show tooltip if panel is not expanded
+                    if (parentPanel) {
+                        if (!parentPanel.classList.contains('expanded') && !parentPanel.classList.contains('mobile-open')) {
                             showTooltip(this, tooltipText);
+                        }
+                    } else {
+                        // For expand button, always show tooltip
+                        showTooltip(this, tooltipText);
                         }
                     }
                 });
@@ -2421,6 +1436,14 @@
                      // It's an organization with accounts - show account switcher
                      initialAccountSwitcher.style.display = 'flex';
                      populateAccountSwitcher(organizationId);
+                     
+                     // Explicitly set account switcher to "All accounts" as default
+                     const accountSwitcherText = document.getElementById('accountSwitcherText');
+                     if (accountSwitcherText) {
+                         accountSwitcherText.textContent = 'All accounts';
+                         initialAccountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                     }
+                     
                      dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
                  } else {
                      // Not an organization or no accounts - hide account switcher
@@ -2645,40 +1668,7 @@
             }, 100);
         });
 
-        // Update sandbox bar positioning based on both panel states
-        function updateSandboxBarPosition() {
-            // Add a small delay to ensure CSS classes have been applied
-            setTimeout(() => {
-                const sandboxBar = document.getElementById('sandboxIndicatorBar');
-                const accountPanel = document.getElementById('accountPanel');
-                
-                if (sandboxBar && accountPanel) {
-                    // Only account panel state matters - sandbox bar extends over nav panel
-                    const isAccountPanelExpanded = accountPanel.classList.contains('expanded') || 
-                                                 getComputedStyle(accountPanel).width === '240px';
-                    
-                    console.log('Updating sandbox bar position:');
-                    console.log('- Account panel expanded:', isAccountPanelExpanded);
-                    
-                    let leftPosition, widthCalc;
-                    
-                    if (isAccountPanelExpanded) {
-                        // Account panel is expanded (240px) - start after it, extend over nav panel and main content
-                        leftPosition = '240px';
-                        widthCalc = 'calc(100% - 240px)';
-                        console.log('Set sandbox bar for expanded account panel');
-                    } else {
-                        // Account panel is collapsed (65px) - start after it, extend over nav panel and main content
-                        leftPosition = '65px';
-                        widthCalc = 'calc(100% - 65px)';
-                        console.log('Set sandbox bar for collapsed account panel');
-                    }
-                    
-                    sandboxBar.style.setProperty('left', leftPosition, 'important');
-                    sandboxBar.style.setProperty('width', widthCalc, 'important');
-                }
-            }, 50); // Small delay to ensure CSS transitions have started
-        }
+        // Sandbox bar positioning is now handled entirely by CSS classes
 
         // Update tooltip for truncation
         updateAccountSwitcherTooltip();
@@ -2712,11 +1702,11 @@
                  <div class="icon">
                      <div class="genericIcon">
                          <svg viewBox="0 0 16 16" width="16" height="16">
-                             <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#474E5A"/>
-                             <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#474E5A"/>
-                             <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#474E5A"/>
-                             <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#474E5A"/>
-                             <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#474E5A"/>
+                             <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                             <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                             <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                             <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                             <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
                          </svg>
                      </div>
                  </div>
