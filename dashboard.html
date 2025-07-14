@@ -859,6 +859,15 @@
             padding-top: 8px;
         }
 
+        /* Ensure nav-group-top stays pinned to the top when sandbox bar is visible */
+        .dashboard.sandbox-mode #nav-group-top {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: inherit;
+            padding-top: 0;
+        }
+
 
 
         /* Main Content Area */
