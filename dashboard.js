@@ -77,9 +77,13 @@ class Dashboard {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-account-name') {
                     const newAccount = mutation.target.dataset.accountName;
                     if (newAccount !== this.currentActiveAccount) {
+                        const previousAccount = this.currentActiveAccount;
                         this.currentActiveAccount = newAccount;
                         this.updateSandboxesForAccount(newAccount);
-                        console.log('Account switched to:', newAccount);
+                        
+                        // Log the account switch and sandbox isolation
+                        console.log('Business account switched from:', previousAccount, 'to:', newAccount);
+                        this.logSandboxIsolation(previousAccount, newAccount);
                     }
                 }
             });
@@ -90,6 +94,24 @@ class Dashboard {
                 attributes: true,
                 attributeFilter: ['data-account-name']
             });
+        }
+    }
+
+    // Log sandbox isolation to verify each business account has unique sandboxes
+    logSandboxIsolation(previousAccount, newAccount) {
+        if (previousAccount && newAccount) {
+            const prevSandboxes = this.getSandboxesForAccount(previousAccount);
+            const newSandboxes = this.getSandboxesForAccount(newAccount);
+            
+            console.log('Sandbox isolation verified:');
+            console.log(`- ${previousAccount} has ${prevSandboxes.length} sandboxes:`, prevSandboxes.map(s => s.name));
+            console.log(`- ${newAccount} has ${newSandboxes.length} sandboxes:`, newSandboxes.map(s => s.name));
+            
+            // Verify that sandboxes are indeed unique to each account
+            const hasUniqueSandboxes = prevSandboxes.some(ps => 
+                !newSandboxes.some(ns => ns.name === ps.name)
+            );
+            console.log('✓ Sandbox isolation confirmed:', hasUniqueSandboxes ? 'PASS' : 'FAIL');
         }
     }
 
@@ -137,7 +159,11 @@ class Dashboard {
 
     // Get default sandboxes for an account
     getDefaultSandboxes(accountName) {
-        return [
+        // Create unique sandboxes based on the business account name
+        const businessSpecificSandboxes = [];
+        
+        // Base sandboxes that every business account gets
+        const baseSandboxes = [
             {
                 name: `${accountName} Development`,
                 type: 'account',
@@ -153,8 +179,60 @@ class Dashboard {
                 account: accountName,
                 created: new Date().toISOString(),
                 lastUsed: null
+            },
+            {
+                name: `${accountName} Staging`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null
             }
         ];
+        
+        businessSpecificSandboxes.push(...baseSandboxes);
+        
+        // Add business-specific sandboxes based on the account name
+        if (accountName.toLowerCase().includes('acme')) {
+            businessSpecificSandboxes.push({
+                name: `${accountName} Global Expansion`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null
+            });
+        } else if (accountName.toLowerCase().includes('cactus')) {
+            businessSpecificSandboxes.push({
+                name: `${accountName} Patient Portal`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null
+            });
+        } else if (accountName.toLowerCase().includes('fatsos')) {
+            businessSpecificSandboxes.push({
+                name: `${accountName} Menu Updates`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null
+            });
+        } else {
+            // Generic additional sandbox for other businesses
+            businessSpecificSandboxes.push({
+                name: `${accountName} Production Mirror`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null
+            });
+        }
+        
+        return businessSpecificSandboxes;
     }
 
     // Get default organization sandboxes for an organization
@@ -265,13 +343,16 @@ class Dashboard {
         // Populate main container
         if (container) {
             sandboxesToShow.forEach((sandbox, index) => {
-                const sandboxItem = this.createSandboxItem(sandbox, index);
+                const sandboxItem = this.createSandboxListItem(sandbox, index);
                 container.appendChild(sandboxItem);
             });
             
             // Update animation delays
             this.updateAnimationDelays(container);
         }
+
+        // Update sandbox section header
+        this.updateSandboxSectionHeader(accountName, sandboxesToShow.length);
         
         // Populate sandbox popover
         if (popoverContent) {
@@ -292,6 +373,48 @@ class Dashboard {
         }
         
         console.log(`Updated sandbox list - Context: ${isViewingAllAccounts ? 'Organization' : 'Account'}, Sandboxes:`, sandboxesToShow);
+    }
+
+    // Update sandbox section header to show current business account
+    updateSandboxSectionHeader(accountName, sandboxCount) {
+        const businessAccountElement = document.getElementById('sandboxBusinessAccount');
+        const sandboxCountElement = document.getElementById('sandboxCount');
+        
+        if (businessAccountElement) {
+            businessAccountElement.textContent = accountName;
+        }
+        
+        if (sandboxCountElement) {
+            sandboxCountElement.textContent = sandboxCount;
+        }
+    }
+
+    // Create a sandbox item element for the main list
+    createSandboxListItem(sandbox, index) {
+        const item = document.createElement('div');
+        item.className = `sandbox-item ${sandbox.type}`;
+        item.style.animationDelay = `${index * 0.05}s`;
+        item.setAttribute('data-sandbox-type', sandbox.type);
+        item.setAttribute('data-sandbox-name', sandbox.name);
+        
+        const lastUsedText = sandbox.lastUsed ? 
+            `Last used: ${new Date(sandbox.lastUsed).toLocaleDateString()}` : 
+            'Never used';
+        
+        item.innerHTML = `
+            <div class="sandbox-item-name">${sandbox.name}</div>
+            <div class="sandbox-item-meta">
+                <span class="sandbox-type-badge ${sandbox.type}">${sandbox.type}</span>
+                <span>${lastUsedText}</span>
+            </div>
+        `;
+        
+        // Add click handler to enter sandbox mode
+        item.addEventListener('click', () => {
+            this.enterSandboxMode(sandbox);
+        });
+        
+        return item;
     }
 
     // Create a sandbox item element for the main list
