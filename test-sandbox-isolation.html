@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Isolation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .results { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Sandbox Isolation Test</h1>
+    
+    <div class="test-section">
+        <h2>Manual Test Instructions</h2>
+        <p>To test sandbox isolation:</p>
+        <ol>
+            <li>Open the main dashboard.html in another tab</li>
+            <li>Switch between different business accounts (e.g., Acme Corp → Beta Inc)</li>
+            <li>Check that each business account has distinct sandboxes</li>
+            <li>Use the debugging functions below to inspect sandbox storage</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debugging Functions</h2>
+        <button onclick="debugSandboxes()">Debug Sandbox Storage</button>
+        <button onclick="clearSandboxes()">Clear All Sandboxes</button>
+        <button onclick="testSandboxIsolation()">Test Sandbox Isolation</button>
+        <div id="debug-output" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li>Each business account should have its own unique set of sandboxes</li>
+            <li>Switching business accounts should show different sandboxes</li>
+            <li>Sandboxes should be stored with unique account keys in localStorage</li>
+            <li>Default sandboxes should have unique IDs and account references</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Common Issues Fixed</h2>
+        <ul>
+            <li>✓ Fixed logic error in updateSandboxesForAccount function</li>
+            <li>✓ Clarified business account vs organization sub-account handling</li>
+            <li>✓ Added unique IDs to default sandboxes</li>
+            <li>✓ Added validation and debugging functions</li>
+        </ul>
+    </div>
+
+    <script>
+        function debugSandboxes() {
+            const output = document.getElementById('debug-output');
+            try {
+                if (typeof window.debugSandboxes === 'function') {
+                    window.debugSandboxes();
+                    output.innerHTML = '<div class="success">✓ Debug info logged to console</div>';
+                } else {
+                    output.innerHTML = '<div class="error">✗ Debug function not available. Load dashboard.html first.</div>';
+                }
+            } catch (e) {
+                output.innerHTML = '<div class="error">✗ Error: ' + e.message + '</div>';
+            }
+        }
+        
+        function clearSandboxes() {
+            const output = document.getElementById('debug-output');
+            try {
+                if (typeof window.clearSandboxes === 'function') {
+                    window.clearSandboxes();
+                    output.innerHTML = '<div class="success">✓ All sandbox data cleared</div>';
+                } else {
+                    output.innerHTML = '<div class="error">✗ Clear function not available. Load dashboard.html first.</div>';
+                }
+            } catch (e) {
+                output.innerHTML = '<div class="error">✗ Error: ' + e.message + '</div>';
+            }
+        }
+        
+        function testSandboxIsolation() {
+            const output = document.getElementById('debug-output');
+            
+            // Test localStorage isolation
+            const accountSandboxes = localStorage.getItem('accountSandboxes');
+            const orgSandboxes = localStorage.getItem('organizationSandboxes');
+            
+            output.innerHTML = `
+                <div>
+                    <h3>LocalStorage Test:</h3>
+                    <p>Account Sandboxes: ${accountSandboxes ? 'Found' : 'Not found'}</p>
+                    <p>Organization Sandboxes: ${orgSandboxes ? 'Found' : 'Not found'}</p>
+                    
+                    <h3>Isolation Test:</h3>
+                    <p>Open console and switch business accounts to see isolation validation</p>
+                    <p class="warning">⚠ Make sure to have dashboard.html loaded in another tab</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

@@ -39,6 +39,10 @@ class Dashboard {
 
         // Initialize account tracking
         this.initializeAccountTracking();
+        
+        // Expose debugging functions globally
+        window.debugSandboxes = () => this.debugSandboxStorage();
+        window.clearSandboxes = () => this.clearAllSandboxData();
     }
 
     // Get organization accounts mapping
@@ -77,9 +81,14 @@ class Dashboard {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-account-name') {
                     const newAccount = mutation.target.dataset.accountName;
                     if (newAccount !== this.currentActiveAccount) {
+                        const previousAccount = this.currentActiveAccount;
                         this.currentActiveAccount = newAccount;
+                        console.log('Account switched from:', previousAccount, 'to:', newAccount);
+                        
+                        // Validate sandbox isolation
+                        this.validateSandboxIsolation(previousAccount, newAccount);
+                        
                         this.updateSandboxesForAccount(newAccount);
-                        console.log('Account switched to:', newAccount);
                     }
                 }
             });
@@ -115,6 +124,57 @@ class Dashboard {
         localStorage.setItem('organizationSandboxes', JSON.stringify(this.organizationSandboxes));
     }
 
+    // Debug function to inspect sandbox storage
+    debugSandboxStorage() {
+        console.log('=== SANDBOX STORAGE DEBUG ===');
+        console.log('Current Active Account:', this.currentActiveAccount);
+        console.log('Account Sandboxes:', JSON.stringify(this.accountSandboxes, null, 2));
+        console.log('Organization Sandboxes:', JSON.stringify(this.organizationSandboxes, null, 2));
+        console.log('LocalStorage accountSandboxes:', localStorage.getItem('accountSandboxes'));
+        console.log('LocalStorage organizationSandboxes:', localStorage.getItem('organizationSandboxes'));
+        console.log('=== END DEBUG ===');
+    }
+
+    // Clear all sandbox data (for debugging)
+    clearAllSandboxData() {
+        this.accountSandboxes = {};
+        this.organizationSandboxes = {};
+        localStorage.removeItem('accountSandboxes');
+        localStorage.removeItem('organizationSandboxes');
+        console.log('All sandbox data cleared');
+        this.updateSandboxesForAccount(this.currentActiveAccount);
+    }
+
+    // Validate that sandbox isolation is working correctly
+    validateSandboxIsolation(previousAccount, newAccount) {
+        if (!previousAccount || !newAccount) return;
+        
+        const previousSandboxes = this.accountSandboxes[previousAccount] || [];
+        const newSandboxes = this.accountSandboxes[newAccount] || [];
+        
+        console.log('Validating sandbox isolation:');
+        console.log('Previous account:', previousAccount, 'has', previousSandboxes.length, 'sandboxes');
+        console.log('New account:', newAccount, 'has', newSandboxes.length, 'sandboxes');
+        
+        // Check if sandbox arrays are different references
+        if (previousSandboxes === newSandboxes) {
+            console.error('SANDBOX ISOLATION BROKEN: Same sandbox array reference!');
+            console.error('Previous:', previousSandboxes);
+            console.error('New:', newSandboxes);
+        } else {
+            console.log('✓ Sandbox isolation working - different array references');
+        }
+        
+        // Check if sandbox contents are improperly shared
+        const previousNames = previousSandboxes.map(s => s.name);
+        const newNames = newSandboxes.map(s => s.name);
+        const sharedNames = previousNames.filter(name => newNames.includes(name));
+        
+        if (sharedNames.length > 0) {
+            console.warn('Potentially shared sandbox names:', sharedNames);
+        }
+    }
+
     // Get sandboxes for a specific account
     getSandboxesForAccount(accountName) {
         if (!this.accountSandboxes[accountName]) {
@@ -137,6 +197,8 @@ class Dashboard {
 
     // Get default sandboxes for an account
     getDefaultSandboxes(accountName) {
+        // Create unique sandbox names with timestamp to ensure distinctness
+        const timestamp = new Date().getTime();
         return [
             {
                 name: `${accountName} Development`,
@@ -144,7 +206,8 @@ class Dashboard {
                 organization: null,
                 account: accountName,
                 created: new Date().toISOString(),
-                lastUsed: null
+                lastUsed: null,
+                id: `${accountName}-dev-${timestamp}` // Unique identifier
             },
             {
                 name: `${accountName} Testing`,
@@ -152,7 +215,8 @@ class Dashboard {
                 organization: null,
                 account: accountName,
                 created: new Date().toISOString(),
-                lastUsed: null
+                lastUsed: null,
+                id: `${accountName}-test-${timestamp}` // Unique identifier
             }
         ];
     }
@@ -242,23 +306,31 @@ class Dashboard {
                 console.log('Showing account sandboxes for original business account:', originalBusinessAccountName);
             }
         } else {
-            // Not in sandbox mode - use normal logic based on current account switcher state
-            const accountSwitcherText = document.getElementById('accountSwitcherText');
-            const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
-            
-            if (isViewingAllAccounts && organizationId) {
-                // Show only organization sandboxes when viewing "All accounts"
-                sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
-                console.log('Showing organization sandboxes for:', organizationId);
-            } else if (!isViewingAllAccounts && accountSwitcherText) {
-                // Show account sandboxes for the specific selected account
-                const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
-                sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
-                console.log('Showing account sandboxes for:', specificAccountName);
+            // Not in sandbox mode - use business account to determine sandboxes
+            // The account switcher is for organization sub-accounts, not business accounts
+            if (organizationId) {
+                // Business account is part of an organization
+                const accountSwitcherText = document.getElementById('accountSwitcherText');
+                const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+                
+                if (isViewingAllAccounts) {
+                    // Show organization sandboxes when viewing "All accounts"
+                    sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
+                    console.log('Showing organization sandboxes for business account organization:', organizationId);
+                } else if (accountSwitcherText) {
+                    // Show account sandboxes for the specific selected sub-account
+                    const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
+                    sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
+                    console.log('Showing account sandboxes for selected sub-account:', specificAccountName);
+                } else {
+                    // Fallback: show account sandboxes for the business account
+                    sandboxesToShow = this.getSandboxesForAccount(accountName);
+                    console.log('Showing account sandboxes for business account:', accountName);
+                }
             } else {
-                // Fallback: show account sandboxes for the main account
+                // Business account is standalone - always show its account sandboxes
                 sandboxesToShow = this.getSandboxesForAccount(accountName);
-                console.log('Showing fallback account sandboxes for:', accountName);
+                console.log('Showing account sandboxes for standalone business account:', accountName);
             }
         }
         
@@ -291,7 +363,10 @@ class Dashboard {
             this.updatePopoverAnimationDelays(popoverContent);
         }
         
-        console.log(`Updated sandbox list - Context: ${isViewingAllAccounts ? 'Organization' : 'Account'}, Sandboxes:`, sandboxesToShow);
+        // Determine context for logging
+        const logContext = isInSandboxMode ? 'Sandbox Mode' : 
+                          (organizationId ? 'Organization' : 'Account');
+        console.log(`Updated sandbox list - Context: ${logContext}, Sandboxes:`, sandboxesToShow);
     }
 
     // Create a sandbox item element for the main list
