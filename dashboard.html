@@ -4,7 +4,1030 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+            overflow: visible;
+        }
+
+        /* Left Navigation Panels */
+        .nav-panel, .account-panel {
+            background: #ffffff;
+            width: 65px;
+            height: 100vh;
+            padding: 16px 20px;
+            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1), margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e0e0e0;
+            box-sizing: border-box;
+        }
+
+        .nav-panel {
+            overflow: visible;
+        }
+
+        .account-panel {
+            overflow: visible;
+        }
+
+        .account-panel {
+            background: #F5F6F8;
+            box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.08);
+        }
+
+        .account-panel {
+            z-index: 1000;
+        }
+
+        .nav-panel {
+            z-index: 1001;
+        }
+
+        .account-panel {
+            cursor: pointer;
+        }
+
+        /* Expand Button Container */
+        .expandButton-container {
+            position: fixed;
+            left: 130px; /* 65px (account panel) + 65px (nav panel) + 8px offset - 8px container padding */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px; /* Increased for better click area */
+            height: 32px; /* 16px button + 8px padding on top and bottom */
+            z-index: 1002;
+            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .expandButton-container:hover {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Expand Button */
+        .expandButton {
+            width: 2px;
+            height: 16px;
+            background-color: #e0e0e0;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+        }
+
+        /* Default state - arrow points right (expand) */
+        .expandButton-container:hover .expandButton {
+            background-color: transparent;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid #666;
+            border-bottom: 2px solid #666;
+            transform: rotate(-45deg);
+        }
+
+        /* When navPanel is expanded - arrow points left (collapse) */
+        .nav-panel.expanded ~ .expandButton-container:hover .expandButton {
+            border-right: none;
+            border-left: 2px solid #666;
+            border-bottom: 2px solid #666;
+            transform: rotate(45deg);
+        }
+
+        /* Global Tooltip Container */
+        .global-tooltip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        .tooltip-content {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateY(-50%);
+        }
+
+        .tooltip-content.show {
+            opacity: 1;
+        }
+
+        /* Mobile - hide tooltips */
+        @media (max-width: 768px) {
+            .global-tooltip {
+                display: none;
+            }
+        }
+
+        /* Account Switcher Popover */
+        .account-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateY(-8px);
+        }
+
+        .account-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .account-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .account-popover.show .account-popover-content {
+            transform: scale(1);
+        }
+
+        .account-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .account-popover.show .account-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Animation delays are now handled dynamically in JavaScript */
+
+        @keyframes slideInItem {
+            to {
+            opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .account-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .account-popover-item.selected {
+            position: relative;
+            padding-right: 40px;
+            font-weight: 500;
+        }
+
+        .account-popover-item.selected::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .account-popover-item.selected:hover {
+            background-color: #f8f9fa;
+        }
+
+        .account-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        /* Sandbox items in account popover */
+        .account-popover-item.sandbox-item {
+            border-left: 3px solid #533AFD;
+            background: rgba(83, 58, 253, 0.05);
+        }
+        
+        .account-popover-item.sandbox-item:hover {
+            background: rgba(83, 58, 253, 0.1);
+        }
+        
+        .account-popover-item.sandbox-item.selected {
+            position: relative;
+            padding-right: 40px;
+            font-weight: 500;
+        }
+
+        .account-popover-item.sandbox-item.selected::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23474E5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16,9 10,15 8,13"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .account-popover-item.sandbox-item.selected:hover {
+            background: rgba(83, 58, 253, 0.1);
+        }
+        .account-popover-divider-container {
+            padding: 8px 0;
+        }
+
+        .account-popover-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 0;
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .account-popover.show .account-popover-divider {
+            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes slideInDivider {
+            to {
+            opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+
+        /* Account Search Field */
+        .account-search-container {
+            padding: 8px 12px 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .account-search-field {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            background: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .account-search-field:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+        }
+
+        .account-search-field::placeholder {
+            color: #999;
+        }
+
+        /* Create Popover */
+        .create-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateX(-8px);
+        }
+
+        .create-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .create-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .create-popover.show .create-popover-content {
+            transform: scale(1);
+        }
+
+        .create-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .create-popover.show .create-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .create-popover.show .create-popover-item:nth-child(1) { animation-delay: 0.05s; }
+        .create-popover.show .create-popover-item:nth-child(2) { animation-delay: 0.1s; }
+
+        .create-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .create-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        /* Sandbox Popover */
+        .sandbox-popover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                       visibility 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateX(-8px);
+        }
+
+        .sandbox-popover.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .sandbox-popover-content {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 280px;
+            max-width: 320px;
+            padding: 8px;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .sandbox-popover.show .sandbox-popover-content {
+            transform: scale(1);
+        }
+
+        .sandbox-popover-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            color: #333;
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .sandbox-popover.show .sandbox-popover-item {
+            animation: slideInItem 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .sandbox-popover.show .sandbox-popover-item:nth-child(1) { animation-delay: 0.05s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(2) { animation-delay: 0.1s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(3) { animation-delay: 0.15s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(4) { animation-delay: 0.2s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(5) { animation-delay: 0.25s; }
+.sandbox-popover.show .sandbox-popover-item:nth-child(6) { animation-delay: 0.3s; }
+
+        .sandbox-popover-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .sandbox-popover-item .icon {
+            margin-right: 8px;
+        }
+
+        .sandbox-popover-divider-container {
+            padding: 8px 0;
+        }
+
+        .sandbox-popover-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 0;
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .sandbox-popover.show .sandbox-popover-divider {
+            animation: slideInDivider 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation-delay: 0.15s;
+        }
+
+        .nav-panel.expanded ~ .expandButton-container {
+            left: 305px; /* 65px (account panel) + 240px (expanded nav panel) + 8px offset - 8px container padding */
+        }
+
+        .account-panel.expanded ~ .nav-panel ~ .expandButton-container {
+            left: 305px; /* 240px (expanded account panel) + 65px (nav panel) + 8px offset - 8px container padding */
+        }
+
+        .nav-panel.expanded, .account-panel.expanded {
+            width: 240px;
+        }
+
+        .nav-panel.expanded {
+            overflow: visible;
+        }
+
+        .nav-content {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-panel .nav-content {
+            overflow: hidden;
+        }
+
+        .nav-panel.expanded .nav-content {
+            overflow: visible;
+        }
+
+        .account-panel .nav-content {
+            overflow: visible;
+        }
+
+        /* Unified Navigation Component */
+        .nav-component {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            margin: 0;
+            cursor: pointer;
+            transition: background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            white-space: nowrap;
+            background-color: transparent;
+            border-radius: 6px;
+        }
+
+
+
+        /* Hover State - Base for all nav components */
+        .nav-component:hover::before,
+        .nav-component.popover-active::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -8px;
+            bottom: -2px;
+            left: -8px;
+            background-color: #F5F6F8;
+            border-radius: 8px;
+            z-index: -1;
+        }
+
+        /* Account panel hover - darker background */
+        .account-panel .nav-component:hover::before,
+        .account-panel .nav-component.popover-active::before {
+            background-color: #e9ecef;
+        }
+
+        /* Active State - Only for nav-panel items */
+        .nav-panel .nav-component.active {
+            background-color: transparent;
+        }
+
+        .nav-panel .nav-component.active .icon,
+        .nav-panel .nav-component.active .nav-text {
+            color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .nav-text,
+        .account-panel .nav-component.active .nav-text {
+            font-weight: 500;
+        }
+
+        /* Disable active account clicks */
+        #active-account {
+            cursor: default !important;
+        }
+
+        .nav-panel .nav-component.active .placeholder-circle {
+            background-color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .company-icon {
+            background-color: #533AFD;
+            color: white;
+        }
+
+        /* Generic Icon active state - Only for nav-panel items */
+        .nav-panel .nav-component.active .genericIcon {
+            color: #533AFD;
+        }
+
+        .nav-panel .nav-component.active .genericIcon .icon-shape {
+            background-color: #533AFD;
+        }
+
+        /* Icon Shape for Generic Icons */
+        .genericIcon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-shape {
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 2px;
+        }
+
+        /* Account Avatar does NOT change color when selected */
+
+        .nav-component .icon {
+            width: 24px;
+            height: 24px;
+            color: #666;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Account Avatar - always 24px, doesn't change color when selected */
+        .accountAvatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #F5F6F8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: white;
+        }
+
+        /* Account Avatar Color Variants */
+        .accountAvatar.color-1 { background-color: #8B5CF6; }
+        .accountAvatar.color-2 { background-color: #EF4444; }
+        .accountAvatar.color-3 { background-color: #10B981; }
+        .accountAvatar.color-4 { background-color: #F59E0B; }
+        .accountAvatar.color-5 { background-color: #3B82F6; }
+        .accountAvatar.color-6 { background-color: #EC4899; }
+
+        /* Account subtitle colors to match account icon colors */
+        .account-subtitle-color-1 { color: #8B5CF6; }
+        .account-subtitle-color-2 { color: #EF4444; }
+        .account-subtitle-color-3 { color: #10B981; }
+        .account-subtitle-color-4 { color: #F59E0B; }
+        .account-subtitle-color-5 { color: #3B82F6; }
+        .account-subtitle-color-6 { color: #EC4899; }
+
+        /* Active Account Stroke */
+        .active-account-stroke {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #533AFD;
+            border-radius: 4px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Match stroke color to account avatar color */
+        .accountAvatar.color-1 + .active-account-stroke { border-color: #8B5CF6; }
+        .accountAvatar.color-2 + .active-account-stroke { border-color: #EF4444; }
+        .accountAvatar.color-3 + .active-account-stroke { border-color: #10B981; }
+        .accountAvatar.color-4 + .active-account-stroke { border-color: #F59E0B; }
+        .accountAvatar.color-5 + .active-account-stroke { border-color: #3B82F6; }
+        .accountAvatar.color-6 + .active-account-stroke { border-color: #EC4899; }
+
+        /* Generic Icon - 24px container with 16px icon centered */
+        /* Can contain either SVG illustrations or generic circle fallback */
+        .genericIcon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        /* Generic circle fallback when no specific icon is provided */
+        .genericIcon .icon-shape {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #D1D5DB;
+        }
+
+        /* SVG illustrations - always 16px and centered */
+        .icon .genericIcon svg {
+            width: 16px !important;
+            height: 16px !important;
+            fill: none;
+            stroke: #596171;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Fill-based icons (organization, settings, sandbox) - no stroke */
+        .icon .genericIcon svg[viewBox="0 0 16 16"] {
+            fill: #596171;
+            stroke: none;
+            stroke-width: 0;
+        }
+
+        /* Legacy placeholder circle for backward compatibility */
+        .placeholder-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #F5F6F8;
+        }
+
+        .company-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #F5F6F8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .nav-component .nav-text {
+            margin-left: 8px;
+            color: var(--Text-Default, #333);
+            font-family: "SF Pro Text";
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 20px; /* 142.857% */
+            letter-spacing: -0.15px;
+            opacity: 0;
+            flex: none;
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .nav-panel.expanded .nav-component .nav-text, 
+        .account-panel.expanded .nav-component .nav-text {
+            opacity: 1;
+        }
+
+        /* Account switcher text truncation */
+        #accountSwitcherText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500; /* Medium font weight */
+        }
+
+        /* When panel is expanded, limit text width to leave space for arrow */
+        .nav-panel.expanded #accountSwitcherText {
+            max-width: 146px; /* 200px available - 24px icon - 8px margin - 6px arrow margin - 16px arrow = 146px */
+        }
+
+        /* Add space below account switcher */
+        #accountSwitcher {
+            margin-bottom: 16px;
+        }
+
+        /* Sandbox Mode Indicator Bar */
+        .sandbox-indicator-bar {
+            position: fixed;
+            top: 0;
+            left: 65px;  /* Start after collapsed account panel, extend over nav panel */
+            width: calc(100% - 65px);  /* Extend over nav panel and main content */
+            height: 32px;
+            background-color: #0E3359;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: left 0.4s cubic-bezier(0.23, 1, 0.32, 1), width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        /* Adjust bar position when account panel is expanded */
+        .dashboard.sandbox-mode.account-panel-expanded .sandbox-indicator-bar {
+            left: 240px;  /* Start after expanded account panel, extend over nav panel and main content */
+            width: calc(100% - 240px);  /* Extend over nav panel and main content */
+        }
+
+        /* Adjust nav panel and main content top margin when sandbox bar is visible */
+        .dashboard.sandbox-mode .nav-panel,
+        .dashboard.sandbox-mode .main-content {
+            margin-top: 32px;
+        }
+
+        /* Remove general dashboard padding and apply specific spacing */
+        .dashboard.sandbox-mode {
+            padding-top: 0;
+        }
+
+        .sandbox-indicator-bar .exit-link {
+            position: absolute;
+            left: 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .sandbox-indicator-bar .exit-link .icon {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .sandbox-indicator-bar .exit-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .sandbox-indicator-bar .exit-link .icon .genericIcon svg {
+            stroke: white;
+        }
+
+        /* Navigation Divider */
+        .nav-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 7.5px 0;
+            width: 100%;
+        }
+
+        /* Navigation Group */
+        .nav-group {
+            width: 100%;
+        }
+
+        .nav-group:first-child {
+            flex: 1;
+        }
+
+        .nav-group-bottom {
+            margin-top: auto;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+        }
+
+
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: margin-top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .header {
+            height: 60px;
+            padding: 0 32px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .searchField {
+            width: 360px;
+            height: 36px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-right: auto;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-circle {
+            width: 16px;
+            height: 16px;
+            background-color: #D1D5DB;
+            border-radius: 50%;
+        }
+
+
+
+
+
+
+
+        .nav-component .dropdown-icon {
+            width: 16px;
+            height: 16px;
+            color: #666;
+            flex-shrink: 0;
+            margin-left: 6px;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .nav-panel.expanded .nav-component .dropdown-icon {
+            opacity: 1;
+        }
+
+        /* Hide dropdown icon when panel is collapsed - no space available */
+        .nav-panel:not(.expanded) .nav-component .dropdown-icon {
+            display: none;
+        }
+
+        .nav-component .dropdown-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: #596171;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+
+
+        .content-area {
+            flex: 1;
+            padding: 0 32px 32px 32px;
+            overflow-y: auto;
+        }
+
+        .placeholder-block {
+            background: #f8f9fa;
+            border-radius: 12px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            color: #666;
+        }
+
+        .placeholder-content h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .placeholder-content p {
+            font-size: 16px;
+            color: #666;
+        }
+
+
+
+        /* Icons */
+        .icon svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #596171;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-panel {
+                position: fixed;
+                left: -60px;
+                z-index: 1000;
+            }
+
+            .account-panel {
+                position: fixed;
+                left: -120px;
+                z-index: 999;
+            }
+
+            .nav-panel.mobile-open {
+                left: 0;
+            }
+
+            .account-panel.mobile-open {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header {
+                padding: 0 20px;
+            }
+
+            .content-area {
+                padding: 0 20px 20px 20px;
+            }
+
+            .nav-panel, .account-panel {
+                padding: 12px 16px;
+            }
+
+            .nav-component {
+                padding: 8px 4px;
+                margin: -4px;
+            }
+
+            .expandButton-container {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -90,7 +1113,7 @@
                 </div>
                 
                 <div class="nav-group nav-group-bottom">
-                    <div class="nav-component" data-tooltip="username">
+                    <div class="nav-component" data-tooltip="Jenny Rosen">
                         <div class="icon">
                             <div class="genericIcon">
                                 <svg viewBox="0 0 16 16" width="16" height="16">
@@ -99,7 +1122,7 @@
                     </svg>
                 </div>
                         </div>
-                        <span class="nav-text">username</span>
+                        <span class="nav-text">Jenny Rosen</span>
                     </div>
                     
                     <div class="nav-component" data-tooltip="Sign out">
@@ -134,7 +1157,7 @@
                     </svg>
                 </div>
                     </div>
-                    <span class="nav-text" id="accountSwitcherText">Acme Financial Services Corporation International Holdings Limited</span>
+                    <span class="nav-text" id="accountSwitcherText">All accounts</span>
                     <div class="dropdown-icon">
                         <svg viewBox="0 0 24 24" width="16" height="16">
                             <path d="M6 9l6 6 6-6"/>
@@ -294,7 +1317,7 @@
                 <div class="icon">
                     <div class="genericIcon">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0.25C8.48325 0.25 8.875 0.641751 8.875 1.125V7.125H14.875C15.3582 7.125 15.75 7.51675 15.75 8C15.75 8.48325 15.3582 8.875 14.875 8.875H8.875V14.875C8.875 15.3582 8.48325 15.75 8 15.75C7.51675 15.75 7.125 15.3582 7.125 14.875V8.875H1.125C0.641751 8.875 0.25 8.48325 0.25 8C0.25 7.51675 0.641751 7.125 1.125 7.125H7.125V1.125C7.125 0.641751 7.51675 0.25 8 0.25Z" fill="#596171"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M14.9977 8.19089C15.6092 7.64898 16.0002 6.87952 16.0002 6V5.90012C16.0002 5.58415 15.9687 5.26896 15.9061 4.95925L15.2757 1.83964L15.2729 1.82792C15.1493 1.3036 14.9237 0.814761 14.4989 0.46826C14.0702 0.118638 13.5447 2.32458e-05 13 2.20537e-05L3 0C2.45536 0 1.92982 0.118541 1.50106 0.46812C1.0761 0.814602 0.850422 1.30347 0.726786 1.8279L0.72402 1.83963L0.0936206 4.95927C0.0310375 5.26897 -0.000488281 5.58414 -0.000488281 5.90011V6C-0.000488281 6.87964 0.390631 7.64918 1.00228 8.19109C1.00077 8.21053 1 8.23017 1 8.25V13.75C1 14.9926 2.00736 16 3.25 16H12.75C13.9926 16 15 14.9926 15 13.75V8.25C15 8.2301 14.9992 8.21039 14.9977 8.19089ZM1.5639 5.25637L2.18938 2.16112C2.27008 1.82536 2.37436 1.69148 2.44893 1.63068C2.5205 1.57233 2.66423 1.5 3 1.5L5.13914 1.5L4.91916 5.83281V5.85184C4.91916 6.75985 4.16621 7.5185 3.20933 7.5185C2.20733 7.5185 1.49951 6.78036 1.49951 6V5.90011C1.49951 5.68392 1.52108 5.46828 1.5639 5.25637ZM6.41924 5.86925L6.64107 1.50001L9.35867 1.50001L9.5805 5.86926C9.5716 6.81148 8.84083 7.51853 7.99982 7.51853C7.15886 7.51853 6.42814 6.81151 6.41924 5.86925ZM11.0806 5.83283L10.8606 1.50002L13 1.50002C13.3356 1.50002 13.4793 1.57235 13.5508 1.6307C13.6254 1.6915 13.7297 1.8254 13.8103 2.16111L14.4358 5.25637C14.4787 5.46827 14.5002 5.68393 14.5002 5.90012V6C14.5002 6.78037 13.7924 7.51853 12.7904 7.51853C11.8335 7.51853 11.0806 6.75987 11.0806 5.85186V5.83283ZM12.7904 9.01853C11.8162 9.01853 10.9371 8.58803 10.3463 7.90493C9.78443 8.58417 8.94686 9.01853 7.99982 9.01853C7.05278 9.01853 6.21526 8.58417 5.65344 7.90494C5.06261 8.58802 4.18353 9.0185 3.20933 9.0185C2.96731 9.0185 2.72967 8.99264 2.5 8.94337V11.5H13.5V8.94334C13.2703 8.99264 13.0325 9.01853 12.7904 9.01853ZM2.5 13.75V13H13.5V13.75C13.5 14.1642 13.1642 14.5 12.75 14.5H3.25C2.83579 14.5 2.5 14.1642 2.5 13.75Z" fill="#596171"/>
                         </svg>
                     </div>
                 </div>
@@ -322,7 +1345,7 @@
         <div class="sandbox-popover-content" id="sandbox-popover-content">
             <!-- Account-specific sandboxes will be dynamically populated here -->
             <div class="sandbox-popover-divider-container">
-                <div class="sandbox-popover-divider"></div>
+            <div class="sandbox-popover-divider"></div>
             </div>
             <div id="createAccountSandbox" class="sandbox-popover-item" onclick="createNewSandbox('account')">
                 <div class="icon">
@@ -386,6 +1409,33 @@
         // Function to check if text is truncated
         function isTextTruncated(element) {
             return element.scrollWidth > element.clientWidth;
+        }
+
+        // Function to update account switcher icon based on selected account
+        function updateAccountSwitcherIcon(accountData = null) {
+            const accountSwitcher = document.getElementById('accountSwitcher');
+            if (!accountSwitcher) return;
+            
+            const iconContainer = accountSwitcher.querySelector('.icon');
+            if (!iconContainer) return;
+            
+            if (accountData && accountData.initials && accountData.color) {
+                // Show specific account avatar
+                iconContainer.innerHTML = `<div class="accountAvatar ${accountData.color}">${accountData.initials}</div>`;
+            } else {
+                // Show generic "All accounts" icon
+                iconContainer.innerHTML = `
+                    <div class="genericIcon">
+                        <svg viewBox="0 0 16 16" width="16" height="16">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
+                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
+                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
+                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
+                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
+                        </svg>
+                    </div>
+                `;
+            }
         }
 
         // Function to update account switcher tooltip based on truncation
@@ -550,6 +1600,9 @@
             }
         }
 
+        // Track previous nav panel state for restoration
+        let previousNavPanelState = false;
+        
         function toggleAccountPanel() {
             const accountPanel = document.getElementById('accountPanel');
             const navPanel = document.getElementById('navPanel');
@@ -562,9 +1615,22 @@
             hideSandboxPopover();
             
             if (window.innerWidth <= 768) {
+                // Save nav panel state before closing if we're opening account panel
+                if (!accountPanel.classList.contains('mobile-open') && navPanel.classList.contains('mobile-open')) {
+                    previousNavPanelState = true;
+                }
+                
                 // Close navPanel if it's open
                 navPanel.classList.remove('mobile-open');
                 accountPanel.classList.toggle('mobile-open');
+                
+                // If closing account panel and nav panel was previously open, restore it
+                if (!accountPanel.classList.contains('mobile-open') && previousNavPanelState) {
+                    navPanel.classList.add('mobile-open');
+                    dashboard.classList.add('nav-panel-expanded');
+                    expandButton.setAttribute('data-tooltip', 'Collapse');
+                    previousNavPanelState = false;
+                }
                 
                 // Update dashboard class for sandbox bar positioning
                 if (accountPanel.classList.contains('mobile-open')) {
@@ -575,10 +1641,23 @@
                 
                 // Sandbox bar positioning handled by CSS classes
             } else {
+                // Save nav panel state before closing if we're opening account panel
+                if (!accountPanel.classList.contains('expanded') && navPanel.classList.contains('expanded')) {
+                    previousNavPanelState = true;
+                }
+                
                 // Close navPanel if it's open
                 navPanel.classList.remove('expanded');
                 dashboard.classList.remove('nav-panel-expanded');
                 accountPanel.classList.toggle('expanded');
+                
+                // If closing account panel and nav panel was previously expanded, restore it
+                if (!accountPanel.classList.contains('expanded') && previousNavPanelState) {
+                    navPanel.classList.add('expanded');
+                    dashboard.classList.add('nav-panel-expanded');
+                    expandButton.setAttribute('data-tooltip', 'Collapse');
+                    previousNavPanelState = false;
+                }
                 
                 // Update dashboard class for sandbox bar positioning
                 if (accountPanel.classList.contains('expanded')) {
@@ -590,8 +1669,10 @@
                 // Sandbox bar positioning handled by CSS classes
             }
             
-            // Update expand button tooltip text since navPanel is now closed
-            expandButton.setAttribute('data-tooltip', 'Expand');
+            // Update expand button tooltip text since navPanel is now closed (if not restored)
+            if (!previousNavPanelState) {
+                expandButton.setAttribute('data-tooltip', 'Expand');
+            }
             
             // Update status indicator
             updateNavPanelStatus();
@@ -608,6 +1689,9 @@
             hideAccountPopover();
             hideCreatePopover();
             hideSandboxPopover();
+            
+            // Reset restoration state when nav panel is manually toggled
+            previousNavPanelState = false;
             
             if (window.innerWidth <= 768) {
                 // Close accountPanel if it's open
@@ -666,6 +1750,8 @@
                 if (!navPanel.contains(e.target) && !accountPanel.contains(e.target) && !clickedExpandButton) {
                     navPanel.classList.remove('mobile-open');
                     accountPanel.classList.remove('mobile-open');
+                    // Reset restoration state when panels are closed by clicking outside
+                    previousNavPanelState = false;
                 }
             }
         });
@@ -682,10 +1768,14 @@
             if (window.innerWidth <= 768) {
                 if (accountPanel.classList.contains('mobile-open')) {
                     accountPanel.classList.remove('mobile-open');
+                    // Reset restoration state when account panel is closed by clicking main content
+                    previousNavPanelState = false;
                 }
             } else {
                 if (accountPanel.classList.contains('expanded')) {
                     accountPanel.classList.remove('expanded');
+                    // Reset restoration state when account panel is closed by clicking main content
+                    previousNavPanelState = false;
                 }
             }
         });
@@ -695,6 +1785,11 @@
             component.addEventListener('click', function(e) {
                 // Stop event propagation to prevent panel expansion
                 e.stopPropagation();
+                
+                // Disable clicks on the active account
+                if (this.id === 'active-account') {
+                    return;
+                }
                 
                 // Special handling for accountSwitcher - toggle popover or exit sandbox
                 if (this.id === 'accountSwitcher') {
@@ -713,17 +1808,7 @@
                     return;
                 }
                 
-                // Special handling for createTrigger - toggle popover
-                if (this.id === 'createTrigger') {
-                    toggleCreatePopover(this);
-                    return;
-                }
-                
-                // Special handling for sandboxTrigger - toggle popover
-                if (this.id === 'sandboxTrigger') {
-                    toggleSandboxPopover(this);
-                    return;
-                }
+                // createTrigger and sandboxTrigger are now handled by hover events
                 
 
                 
@@ -756,6 +1841,72 @@
             });
         });
 
+        // Add hover event handlers for createTrigger and sandboxTrigger
+        document.addEventListener('DOMContentLoaded', function() {
+            const createTrigger = document.getElementById('createTrigger');
+            const sandboxTrigger = document.getElementById('sandboxTrigger');
+            const createPopover = document.getElementById('createPopover');
+            const sandboxPopover = document.getElementById('sandboxPopover');
+
+            if (createTrigger) {
+                createTrigger.addEventListener('mouseenter', function() {
+                    // Close other popovers first
+                    hideAccountPopover();
+                    hideSandboxPopover();
+                    showCreatePopover(this);
+                });
+                
+                createTrigger.addEventListener('mouseleave', function() {
+                    // Add small delay to allow moving to popover
+                    setTimeout(() => {
+                        if (createPopover && !createPopover.matches(':hover') && !this.matches(':hover')) {
+                            hideCreatePopover();
+                        }
+                    }, 150);
+                });
+            }
+
+            if (createPopover) {
+                createPopover.addEventListener('mouseleave', function() {
+                    // Add small delay before hiding
+                    setTimeout(() => {
+                        if (createTrigger && !createTrigger.matches(':hover') && !this.matches(':hover')) {
+                            hideCreatePopover();
+                        }
+                    }, 150);
+                });
+            }
+
+            if (sandboxTrigger) {
+                sandboxTrigger.addEventListener('mouseenter', function() {
+                    // Close other popovers first
+                    hideAccountPopover();
+                    hideCreatePopover();
+                    showSandboxPopover(this);
+                });
+                
+                sandboxTrigger.addEventListener('mouseleave', function() {
+                    // Add small delay to allow moving to popover
+                    setTimeout(() => {
+                        if (sandboxPopover && !sandboxPopover.matches(':hover') && !this.matches(':hover')) {
+                            hideSandboxPopover();
+                        }
+                    }, 150);
+                });
+            }
+
+            if (sandboxPopover) {
+                sandboxPopover.addEventListener('mouseleave', function() {
+                    // Add small delay before hiding
+                    setTimeout(() => {
+                        if (sandboxTrigger && !sandboxTrigger.matches(':hover') && !this.matches(':hover')) {
+                            hideSandboxPopover();
+                        }
+                    }, 150);
+                });
+            }
+        });
+
         // Sandbox mode tracking
         let isInSandboxMode = false;
         let activeSandboxName = '';
@@ -772,6 +1923,9 @@
             activeSandboxOrganization = organizationId;
             activeSandboxAccount = accountName;
             
+            // Reset current sandbox account to ensure we start with "All accounts" for organization sandboxes
+            currentSandboxAccount = null;
+            
             // Show sandbox indicator bar
             const sandboxIndicatorBar = document.getElementById('sandboxIndicatorBar');
             const dashboard = document.querySelector('.dashboard');
@@ -784,6 +1938,16 @@
             }
             
             // Sandbox bar positioning handled by CSS classes
+            
+            // Update sandbox trigger text when in sandbox mode
+            const sandboxTrigger = document.getElementById('sandboxTrigger');
+            if (sandboxTrigger) {
+                const sandboxTriggerText = sandboxTrigger.querySelector('.nav-text');
+                if (sandboxTriggerText) {
+                    sandboxTriggerText.textContent = 'Switch sandbox';
+                }
+                sandboxTrigger.setAttribute('data-tooltip', 'Switch sandbox');
+            }
             
             const accountSwitcher = document.getElementById('accountSwitcher');
             
@@ -810,6 +1974,9 @@
                         </div>
                     `;
                     accountSwitcher.setAttribute('data-tooltip', 'Switch accounts');
+                    
+                    // Update icon to show "All accounts" state
+                    updateAccountSwitcherIcon();
                     // Remove any existing onclick handler to prevent conflicts
                     accountSwitcher.onclick = null;
                     
@@ -855,6 +2022,15 @@
             }
             
 
+            // Restore original sandbox trigger text
+            const sandboxTrigger = document.getElementById('sandboxTrigger');
+            if (sandboxTrigger) {
+                const sandboxTriggerText = sandboxTrigger.querySelector('.nav-text');
+                if (sandboxTriggerText) {
+                    sandboxTriggerText.textContent = 'Switch to sandbox';
+                }
+                sandboxTrigger.setAttribute('data-tooltip', 'Switch to sandbox');
+            }
             
             // Restore original account switcher
             const accountSwitcher = document.getElementById('accountSwitcher');
@@ -881,6 +2057,9 @@
                 accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                 // Clear any onclick handler - main event listener will handle clicks
                 accountSwitcher.onclick = null;
+                
+                // Update icon to show "All accounts" state
+                updateAccountSwitcherIcon();
                 
                 // Update tooltip for truncation
                 updateAccountSwitcherTooltip();
@@ -912,7 +2091,8 @@
                 { name: 'Acme Rides US', initials: 'AR', color: 'color-5' },
                 { name: 'Acme Rides Europe', initials: 'AR', color: 'color-6' },
                 { name: 'Acme Financial Services Corporation International Holdings Limited', initials: 'AF', color: 'color-1' },
-                { name: 'Acme Technology Division', initials: 'AT', color: 'color-2' }
+                { name: 'Acme Technology Division', initials: 'AT', color: 'color-2' },
+                { name: 'Acme Logistics Asia', initials: 'AL', color: 'color-3' }
             ],
             'lil-fatsos': [
                 { name: 'Lil\'Fatsos Downtown', initials: 'LD', color: 'color-1' },
@@ -963,6 +2143,9 @@
                  
                  accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                  accountSwitcherText.textContent = 'All accounts';
+                 
+                 // Update icon to show "All accounts" state
+                 updateAccountSwitcherIcon();
                  
                  // Update tooltip for truncation
                  updateAccountSwitcherTooltip();
@@ -1028,6 +2211,14 @@
                      accountSwitcher.setAttribute('data-tooltip', selectedAccountName);
                      accountSwitcherText.textContent = selectedAccountName;
                      
+                     // Update icon to match selected account
+                     const accountColor = this.getAttribute('data-account-color');
+                     const accountInitials = this.getAttribute('data-account-initials');
+                     updateAccountSwitcherIcon({ 
+                         color: accountColor, 
+                         initials: accountInitials 
+                     });
+                     
                      // Update tooltip for truncation
                      updateAccountSwitcherTooltip();
                      
@@ -1036,7 +2227,6 @@
                      if (accountSubtitle) {
                          accountSubtitle.textContent = selectedAccountName;
                           // Update subtitle color to match account icon color
-                          const accountColor = this.getAttribute('data-account-color');
                           updateAccountSubtitleColor(accountColor);
                       }
                      
@@ -1059,6 +2249,29 @@
              accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
                  item.style.animationDelay = `${(index + 1) * 0.05}s`;
              });
+             
+             // Add search functionality if search field exists
+             const searchField = document.getElementById('accountSearchField');
+             if (searchField) {
+                 searchField.addEventListener('input', function() {
+                     const searchTerm = this.value.toLowerCase();
+                     const accountItems = accountPopoverContent.querySelectorAll('.account-popover-item.account');
+                     
+                     accountItems.forEach(item => {
+                         const accountName = item.querySelector('span').textContent.toLowerCase();
+                         if (accountName.includes(searchTerm)) {
+                             item.style.display = 'flex';
+                         } else {
+                             item.style.display = 'none';
+                         }
+                     });
+                 });
+                 
+                 // Focus the search field after a short delay to ensure popover is shown
+                 setTimeout(() => {
+                     searchField.focus();
+                 }, 100);
+             }
         }
 
         // Populate account switcher popover with mirrored accounts (for organization sandbox mode)
@@ -1072,6 +2285,16 @@
             const orgSandboxes = window.dashboard ? window.dashboard.getOrganizationSandboxesForOrganization(organizationId) : [];
             const currentOrgSandbox = orgSandboxes.find(sandbox => sandbox.name === activeSandboxName);
             const mirroredAccounts = currentOrgSandbox ? currentOrgSandbox.accounts : organizationAccounts[organizationId] || [];
+            
+            // Add search field if there are more than 8 accounts
+            if (mirroredAccounts.length > 8) {
+                const searchContainer = document.createElement('div');
+                searchContainer.className = 'account-search-container';
+                searchContainer.innerHTML = `
+                    <input type="text" class="account-search-field" placeholder="Search" id="accountSearchField">
+                `;
+                accountPopoverContent.appendChild(searchContainer);
+            }
             
             // Add "All accounts" header (selected by default)
             const allAccountsItem = document.createElement('div');
@@ -1164,6 +2387,12 @@
                     accountSwitcher.setAttribute('data-tooltip', `${selectedAccountName} (sandbox)`);
                     accountSwitcherText.textContent = `${selectedAccountName} (sandbox)`;
                     
+                    // Update icon to match selected account
+                    updateAccountSwitcherIcon({ 
+                        color: account.color, 
+                        initials: account.initials 
+                    });
+                    
                     // Update tooltip for truncation
                     updateAccountSwitcherTooltip();
                     
@@ -1194,6 +2423,29 @@
              accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
                  item.style.animationDelay = `${(index + 1) * 0.05}s`;
              });
+             
+             // Add search functionality if search field exists
+             const searchField = document.getElementById('accountSearchField');
+             if (searchField) {
+                 searchField.addEventListener('input', function() {
+                     const searchTerm = this.value.toLowerCase();
+                     const accountItems = accountPopoverContent.querySelectorAll('.account-popover-item.account');
+                     
+                     accountItems.forEach(item => {
+                         const accountName = item.querySelector('span').textContent.toLowerCase();
+                         if (accountName.includes(searchTerm)) {
+                             item.style.display = 'flex';
+                         } else {
+                             item.style.display = 'none';
+                         }
+                     });
+                 });
+                 
+                 // Focus the search field after a short delay to ensure popover is shown
+                 setTimeout(() => {
+                     searchField.focus();
+                 }, 100);
+             }
         }
 
         // Update active business account function with account switcher update
@@ -1264,6 +2516,9 @@
                      // Explicitly set account switcher to "All accounts" as default
                      accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                      accountSwitcherText.textContent = 'All accounts';
+                     
+                     // Update icon to show "All accounts" state
+                     updateAccountSwitcherIcon();
                      
                      // Update tooltip for truncation
                      updateAccountSwitcherTooltip();
@@ -1442,6 +2697,9 @@
                      if (accountSwitcherText) {
                          accountSwitcherText.textContent = 'All accounts';
                          initialAccountSwitcher.setAttribute('data-tooltip', 'All accounts');
+                         
+                         // Update icon to show "All accounts" state
+                         updateAccountSwitcherIcon();
                      }
                      
                      dashboardTitle.innerHTML = `${businessName} dashboard<br><span id="accountSubtitle">All accounts (${accounts.length})</span>`;
@@ -1645,7 +2903,7 @@
                         const accountName = activeAccount.dataset.accountName;
                         const stats = window.dashboard.getAccountStats(accountName);
                         statusText.innerHTML = `Account-specific sandboxes active for "${accountName}" (${stats.totalSandboxes} sandboxes)`;
-                    } else {
+                    } else if (statusText) {
                         statusText.innerHTML = 'Initializing...';
                     }
                 }
@@ -1695,6 +2953,16 @@
             // Clear existing content
             accountPopoverContent.innerHTML = '';
             
+            // Add search field if there are more than 8 accounts
+            if (accounts.length > 8) {
+                const searchContainer = document.createElement('div');
+                searchContainer.className = 'account-search-container';
+                searchContainer.innerHTML = `
+                    <input type="text" class="account-search-field" placeholder="Search" id="accountSearchField">
+                `;
+                accountPopoverContent.appendChild(searchContainer);
+            }
+            
                          // Add "All accounts" header
              const allAccountsItem = document.createElement('div');
              allAccountsItem.className = 'account-popover-item selected';
@@ -1722,12 +2990,15 @@
                  // Add selected class to this item
                  this.classList.add('selected');
                  
-                 // Update account switcher to show "All accounts"
+                                  // Update account switcher to show "All accounts"
                  const accountSwitcher = document.getElementById('accountSwitcher');
                  const accountSwitcherText = document.getElementById('accountSwitcherText');
                  
                  accountSwitcher.setAttribute('data-tooltip', 'All accounts');
                  accountSwitcherText.textContent = 'All accounts';
+                 
+                 // Update icon to show "All accounts" state
+                 updateAccountSwitcherIcon();
                  
                  // Update tooltip for truncation
                  updateAccountSwitcherTooltip();
@@ -1739,9 +3010,9 @@
                      const organizationId = currentActiveAccount ? currentActiveAccount.dataset.organization : null;
                      const accounts = organizationAccounts[organizationId] || [];
                      accountSubtitle.textContent = `All accounts (${accounts.length})`;
-                     // Reset color for "All accounts" view
-                     updateAccountSubtitleColor(null);
-                 }
+                      // Reset color for "All accounts" view
+                      updateAccountSubtitleColor(null);
+                  }
                  
                  // Update sandboxes to show organization sandboxes
                  if (window.dashboard) {
@@ -1793,6 +3064,14 @@
                      accountSwitcher.setAttribute('data-tooltip', selectedAccountName);
                      accountSwitcherText.textContent = selectedAccountName;
                      
+                     // Update icon to match selected account
+                     const accountColor = this.getAttribute('data-account-color');
+                     const accountInitials = this.getAttribute('data-account-initials');
+                     updateAccountSwitcherIcon({ 
+                         color: accountColor, 
+                         initials: accountInitials 
+                     });
+                     
                      // Update tooltip for truncation
                      updateAccountSwitcherTooltip();
                      
@@ -1801,7 +3080,6 @@
                      if (accountSubtitle) {
                          accountSubtitle.textContent = selectedAccountName;
                          // Update subtitle color to match account icon color
-                         const accountColor = this.getAttribute('data-account-color');
                          updateAccountSubtitleColor(accountColor);
                      }
                      
@@ -1824,6 +3102,29 @@
              accountPopoverContent.querySelectorAll('.account-popover-item').forEach((item, index) => {
                  item.style.animationDelay = `${(index + 1) * 0.05}s`;
              });
+             
+             // Add search functionality if search field exists
+             const searchField = document.getElementById('accountSearchField');
+             if (searchField) {
+                 searchField.addEventListener('input', function() {
+                     const searchTerm = this.value.toLowerCase();
+                     const accountItems = accountPopoverContent.querySelectorAll('.account-popover-item.account');
+                     
+                     accountItems.forEach(item => {
+                         const accountName = item.querySelector('span').textContent.toLowerCase();
+                         if (accountName.includes(searchTerm)) {
+                             item.style.display = 'flex';
+                         } else {
+                             item.style.display = 'none';
+                         }
+                     });
+                 });
+                 
+                 // Focus the search field after a short delay to ensure popover is shown
+                 setTimeout(() => {
+                     searchField.focus();
+                 }, 100);
+             }
         }
 
         // Initialize account subtitle color on page load
