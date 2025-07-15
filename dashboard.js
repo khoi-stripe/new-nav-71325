@@ -8,6 +8,10 @@ class Dashboard {
         this.accountSandboxes = this.loadAccountSandboxes();
         this.organizationSandboxes = this.loadOrganizationSandboxes();
         this.organizationAccounts = this.getOrganizationAccounts();
+        
+        // Clean up any broken organization sandboxes on startup
+        this.cleanupBrokenOrganizationSandboxes();
+        
         this.init();
     }
 
@@ -145,6 +149,39 @@ class Dashboard {
         this.updateSandboxesForAccount(this.currentActiveAccount);
     }
 
+    // Clean up broken organization sandboxes with undefined organizationId
+    cleanupBrokenOrganizationSandboxes() {
+        console.log('🧹 Cleaning up broken organization sandboxes...');
+        
+        let cleanupCount = 0;
+        const brokenKeys = [];
+        
+        // Find sandboxes with undefined or invalid organizationId
+        Object.keys(this.organizationSandboxes).forEach(orgId => {
+            if (!orgId || orgId === 'undefined' || orgId === 'null') {
+                brokenKeys.push(orgId);
+                const brokenSandboxes = this.organizationSandboxes[orgId];
+                console.log(`🗑️  Found ${brokenSandboxes.length} broken sandboxes with invalid orgId: "${orgId}"`);
+                cleanupCount += brokenSandboxes.length;
+            }
+        });
+        
+        // Remove broken entries
+        brokenKeys.forEach(brokenKey => {
+            delete this.organizationSandboxes[brokenKey];
+        });
+        
+        if (cleanupCount > 0) {
+            this.saveOrganizationSandboxes();
+            console.log(`✅ Cleaned up ${cleanupCount} broken organization sandboxes`);
+            this.updateSandboxesForAccount(this.currentActiveAccount);
+        } else {
+            console.log('✅ No broken organization sandboxes found');
+        }
+        
+        return cleanupCount;
+    }
+
     // Validate that sandbox isolation is working correctly
     validateSandboxIsolation(previousAccount, newAccount) {
         if (!previousAccount || !newAccount) return;
@@ -152,105 +189,240 @@ class Dashboard {
         const previousSandboxes = this.accountSandboxes[previousAccount] || [];
         const newSandboxes = this.accountSandboxes[newAccount] || [];
         
-        console.log('Validating sandbox isolation:');
-        console.log('Previous account:', previousAccount, 'has', previousSandboxes.length, 'sandboxes');
-        console.log('New account:', newAccount, 'has', newSandboxes.length, 'sandboxes');
+        console.log('=== SANDBOX ISOLATION VALIDATION ===');
+        console.log('Previous business account:', previousAccount, 'has', previousSandboxes.length, 'sandboxes');
+        console.log('New business account:', newAccount, 'has', newSandboxes.length, 'sandboxes');
         
         // Check if sandbox arrays are different references
         if (previousSandboxes === newSandboxes) {
-            console.error('SANDBOX ISOLATION BROKEN: Same sandbox array reference!');
+            console.error('🚨 SANDBOX ISOLATION BROKEN: Same sandbox array reference!');
             console.error('Previous:', previousSandboxes);
             console.error('New:', newSandboxes);
         } else {
-            console.log('✓ Sandbox isolation working - different array references');
+            console.log('✅ Sandbox isolation working - different array references');
         }
         
-        // Check if sandbox contents are improperly shared
+        // Check for business account-specific sandbox naming
+        const previousAccountSpecific = previousSandboxes.filter(s => s.account === previousAccount);
+        const newAccountSpecific = newSandboxes.filter(s => s.account === newAccount);
+        
+        console.log('Previous account-specific sandboxes:', previousAccountSpecific.length);
+        console.log('New account-specific sandboxes:', newAccountSpecific.length);
+        
+        // Check if sandbox contents are improperly shared between business accounts
         const previousNames = previousSandboxes.map(s => s.name);
         const newNames = newSandboxes.map(s => s.name);
         const sharedNames = previousNames.filter(name => newNames.includes(name));
         
         if (sharedNames.length > 0) {
-            console.warn('Potentially shared sandbox names:', sharedNames);
+            console.warn('⚠️  Potentially shared sandbox names between business accounts:', sharedNames);
         }
+        
+        // Validate that each business account only sees its own sandboxes
+        const invalidPreviousSandboxes = previousSandboxes.filter(s => s.account && s.account !== previousAccount);
+        const invalidNewSandboxes = newSandboxes.filter(s => s.account && s.account !== newAccount);
+        
+        if (invalidPreviousSandboxes.length > 0) {
+            console.error('🚨 BUSINESS ACCOUNT ISOLATION BROKEN: Previous account sees sandboxes from other accounts:', invalidPreviousSandboxes);
+        }
+        
+        if (invalidNewSandboxes.length > 0) {
+            console.error('🚨 BUSINESS ACCOUNT ISOLATION BROKEN: New account sees sandboxes from other accounts:', invalidNewSandboxes);
+        }
+        
+        if (invalidPreviousSandboxes.length === 0 && invalidNewSandboxes.length === 0) {
+            console.log('✅ Business account isolation working correctly');
+        }
+        
+        console.log('=== END VALIDATION ===');
     }
 
     // Get sandboxes for a specific account
     getSandboxesForAccount(accountName) {
+        if (!accountName) {
+            console.error('🚨 getSandboxesForAccount called with empty accountName');
+            return [];
+        }
+        
+        console.log(`🔍 Getting sandboxes for account: "${accountName}"`);
+        
         if (!this.accountSandboxes[accountName]) {
+            console.log(`📦 No existing sandboxes found for "${accountName}", creating defaults...`);
             // Initialize with default sandboxes for new accounts
             this.accountSandboxes[accountName] = this.getDefaultSandboxes(accountName);
             this.saveAccountSandboxes();
+            console.log(`✅ Created ${this.accountSandboxes[accountName].length} default sandboxes for "${accountName}"`);
         }
-        return this.accountSandboxes[accountName];
+        
+        const sandboxes = this.accountSandboxes[accountName];
+        console.log(`📦 Returning ${sandboxes.length} sandboxes for "${accountName}":`, sandboxes.map(s => s.name));
+        return sandboxes;
     }
 
     // Get organization sandboxes for a specific organization
     getOrganizationSandboxesForOrganization(organizationId) {
+        if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+            console.error('🚨 getOrganizationSandboxesForOrganization called with invalid organizationId:', organizationId);
+            return []; // Return empty array for invalid org IDs
+        }
+        
+        console.log(`🔍 Getting organization sandboxes for organization: "${organizationId}"`);
+        
         if (!this.organizationSandboxes[organizationId]) {
+            console.log(`📦 No existing organization sandboxes found for "${organizationId}", creating defaults...`);
             // Initialize with default organization sandboxes
             this.organizationSandboxes[organizationId] = this.getDefaultOrganizationSandboxes(organizationId);
             this.saveOrganizationSandboxes();
+            console.log(`✅ Created organization sandboxes for "${organizationId}"`);
         }
-        return this.organizationSandboxes[organizationId];
+        
+        const sandboxes = this.organizationSandboxes[organizationId];
+        console.log(`📦 Returning ${sandboxes.length} organization sandboxes for "${organizationId}"`);
+        return sandboxes;
     }
 
     // Get default sandboxes for an account
     getDefaultSandboxes(accountName) {
         // Create unique sandbox names with timestamp to ensure distinctness
         const timestamp = new Date().getTime();
+        const accountSlug = this.createAccountSlug(accountName);
+        
         return [
             {
-                name: `${accountName} Development`,
+                name: `${accountName} Development Environment`,
                 type: 'account',
                 organization: null,
                 account: accountName,
                 created: new Date().toISOString(),
                 lastUsed: null,
-                id: `${accountName}-dev-${timestamp}` // Unique identifier
+                id: `${accountSlug}-dev-${timestamp}`, // Unique identifier with clean slug
+                description: `Development sandbox for ${accountName} - safe testing environment`
             },
             {
-                name: `${accountName} Testing`,
+                name: `${accountName} Staging Environment`,
                 type: 'account',
                 organization: null,
                 account: accountName,
                 created: new Date().toISOString(),
                 lastUsed: null,
-                id: `${accountName}-test-${timestamp}` // Unique identifier
+                id: `${accountSlug}-staging-${timestamp}`, // Unique identifier with clean slug
+                description: `Staging sandbox for ${accountName} - pre-production testing`
+            },
+            {
+                name: `${accountName} QA Testing`,
+                type: 'account',
+                organization: null,
+                account: accountName,
+                created: new Date().toISOString(),
+                lastUsed: null,
+                id: `${accountSlug}-qa-${timestamp}`, // Unique identifier with clean slug
+                description: `Quality assurance sandbox for ${accountName} - comprehensive testing`
             }
         ];
     }
 
+    // Helper method to create clean account slug for IDs
+    createAccountSlug(accountName) {
+        if (!accountName) {
+            console.error('🚨 Cannot create slug from empty account name');
+            return 'unknown-account';
+        }
+        
+        const slug = accountName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
+            .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+            .substring(0, 20); // Limit length
+            
+        console.log(`🔧 Created slug for "${accountName}": "${slug}"`);
+        return slug || 'account'; // Fallback if slug becomes empty
+    }
+
     // Get default organization sandboxes for an organization
     getDefaultOrganizationSandboxes(organizationId) {
+        if (!organizationId || organizationId === 'undefined') {
+            console.error('🚨 Cannot create organization sandboxes without valid organizationId:', organizationId);
+            return [];
+        }
+        
         const orgAccounts = this.organizationAccounts[organizationId] || [];
+        const timestamp = new Date().getTime();
+        
+        // Get organization name for unique sandbox names
+        const orgName = this.getOrganizationDisplayName(organizationId);
+        const orgSlug = this.createOrganizationSlug(organizationId, orgName);
+        const accountCount = orgAccounts.length;
         
         return [
             {
-                name: `Q3 Planning`,
+                name: `${orgName} Multi-Account Development`,
                 type: 'organization',
                 organizationId: organizationId,
                 accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
                 created: new Date().toISOString(),
-                lastUsed: null
+                lastUsed: null,
+                id: `${orgSlug}-dev-${timestamp}`, // Unique identifier
+                description: `Development environment for ${orgName} organization (${accountCount} accounts)`
             },
             {
-                name: `Beta Features`,
+                name: `${orgName} Cross-Account Integration`,
                 type: 'organization',
                 organizationId: organizationId,
                 accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
                 created: new Date().toISOString(),
-                lastUsed: null
+                lastUsed: null,
+                id: `${orgSlug}-integration-${timestamp}`, // Unique identifier
+                description: `Integration testing across all ${orgName} accounts`
             },
             {
-                name: `Holiday Campaign`,
+                name: `${orgName} Production Rollout`,
                 type: 'organization',
                 organizationId: organizationId,
                 accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
                 created: new Date().toISOString(),
-                lastUsed: null
+                lastUsed: null,
+                id: `${orgSlug}-production-${timestamp}`, // Unique identifier
+                description: `Production deployment sandbox for ${orgName} (${accountCount} accounts)`
+            },
+            {
+                name: `${orgName} Security & Compliance`,
+                type: 'organization',
+                organizationId: organizationId,
+                accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
+                created: new Date().toISOString(),
+                lastUsed: null,
+                id: `${orgSlug}-security-${timestamp}`, // Unique identifier
+                description: `Security and compliance testing for ${orgName} organization`
             }
         ];
+    }
+
+    // Helper method to create clean organization slug for IDs
+    createOrganizationSlug(organizationId, orgName) {
+        // Prefer organization ID if it's clean, otherwise use name
+        if (organizationId && organizationId.match(/^[a-z0-9-]+$/)) {
+            return organizationId.substring(0, 15);
+        }
+        
+        return orgName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
+            .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+            .substring(0, 15); // Shorter limit for org slugs
+    }
+
+    // Helper method to get display name for organization
+    getOrganizationDisplayName(organizationId) {
+        // Try to find the organization name from current accounts
+        const activeAccountElement = document.getElementById('active-account');
+        if (activeAccountElement && activeAccountElement.dataset.organization === organizationId) {
+            return activeAccountElement.dataset.accountName;
+        }
+        
+        // Fallback to organization ID with formatting
+        return organizationId.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
     }
 
     // Get organization name from ID
@@ -264,6 +436,9 @@ class Dashboard {
 
     // Update sandboxes display for current account
     updateSandboxesForAccount(accountName) {
+        console.log('🔄 updateSandboxesForAccount called with accountName:', accountName);
+        console.log('🔄 Current this.currentActiveAccount:', this.currentActiveAccount);
+        
         const container = document.getElementById('sandbox-list');
         const popoverContent = document.getElementById('sandbox-popover-content');
         
@@ -285,11 +460,28 @@ class Dashboard {
         // Check if current account belongs to an organization
         const activeAccountElement = document.getElementById('active-account');
         const organizationId = activeAccountElement ? activeAccountElement.dataset.organization : null;
+        const actualActiveAccountName = activeAccountElement ? activeAccountElement.dataset.accountName : null;
+        
+        console.log('🔄 Active account element data:', {
+            accountName: actualActiveAccountName,
+            organizationId: organizationId
+        });
+        
+        // Validate account name consistency
+        if (accountName !== actualActiveAccountName) {
+            console.warn('⚠️  Account name mismatch! Parameter:', accountName, 'vs DOM:', actualActiveAccountName);
+        }
         
         // Check if we're in sandbox mode
         const isInSandboxMode = typeof window !== 'undefined' && window.isInSandboxMode;
         const originalBusinessAccountName = typeof window !== 'undefined' ? window.originalBusinessAccountName : null;
         const originalBusinessAccountOrganization = typeof window !== 'undefined' ? window.originalBusinessAccountOrganization : null;
+        
+        console.log('🔄 Sandbox mode status:', {
+            isInSandboxMode,
+            originalBusinessAccountName,
+            originalBusinessAccountOrganization
+        });
         
         let sandboxesToShow = [];
         
@@ -299,40 +491,60 @@ class Dashboard {
             if (originalBusinessAccountOrganization) {
                 // Original business account was part of an organization - show organization sandboxes
                 sandboxesToShow = this.getOrganizationSandboxesForOrganization(originalBusinessAccountOrganization);
-                console.log('Showing organization sandboxes for original business account organization:', originalBusinessAccountOrganization);
+                console.log('📦 SANDBOX MODE: Showing organization sandboxes for original business account organization:', originalBusinessAccountOrganization);
             } else {
                 // Original business account was standalone - show account sandboxes
                 sandboxesToShow = this.getSandboxesForAccount(originalBusinessAccountName);
-                console.log('Showing account sandboxes for original business account:', originalBusinessAccountName);
+                console.log('📦 SANDBOX MODE: Showing account sandboxes for original business account:', originalBusinessAccountName);
             }
         } else {
-            // Not in sandbox mode - use business account to determine sandboxes
-            // The account switcher is for organization sub-accounts, not business accounts
-            if (organizationId) {
-                // Business account is part of an organization
+            // Not in sandbox mode - use CURRENT business account to determine sandboxes
+            // This is the critical path for business account isolation
+            console.log('📦 NORMAL MODE: Using current business account for sandbox isolation');
+            console.log('📦 Organization ID check:', organizationId, 'Type:', typeof organizationId);
+            
+            if (organizationId && organizationId !== 'undefined' && organizationId !== 'null') {
+                // Business account is part of a VALID organization
                 const accountSwitcherText = document.getElementById('accountSwitcherText');
                 const isViewingAllAccounts = accountSwitcherText && accountSwitcherText.textContent === 'All accounts';
+                
+                console.log('📦 Valid organization detected:', organizationId);
+                console.log('📦 Account switcher text:', accountSwitcherText?.textContent);
+                console.log('📦 Is viewing all accounts:', isViewingAllAccounts);
                 
                 if (isViewingAllAccounts) {
                     // Show organization sandboxes when viewing "All accounts"
                     sandboxesToShow = this.getOrganizationSandboxesForOrganization(organizationId);
-                    console.log('Showing organization sandboxes for business account organization:', organizationId);
+                    console.log('📦 Showing organization sandboxes for business account organization:', organizationId);
                 } else if (accountSwitcherText) {
                     // Show account sandboxes for the specific selected sub-account
                     const specificAccountName = accountSwitcherText.textContent.replace(' (sandbox)', '');
                     sandboxesToShow = this.getSandboxesForAccount(specificAccountName);
-                    console.log('Showing account sandboxes for selected sub-account:', specificAccountName);
+                    console.log('📦 Showing account sandboxes for selected sub-account:', specificAccountName);
                 } else {
                     // Fallback: show account sandboxes for the business account
                     sandboxesToShow = this.getSandboxesForAccount(accountName);
-                    console.log('Showing account sandboxes for business account:', accountName);
+                    console.log('📦 Showing account sandboxes for business account (fallback):', accountName);
                 }
             } else {
                 // Business account is standalone - always show its account sandboxes
+                // This is the most important case for business account isolation
+                console.log('📦 STANDALONE ACCOUNT: No valid organization ID, treating as standalone');
                 sandboxesToShow = this.getSandboxesForAccount(accountName);
-                console.log('Showing account sandboxes for standalone business account:', accountName);
+                console.log('📦 CRITICAL: Showing account sandboxes for standalone business account:', accountName);
             }
         }
+        
+        // Log the final sandboxes being shown for debugging
+        console.log('📦 Final sandboxesToShow:', sandboxesToShow.length, 'sandboxes');
+        console.log('📦 Sandbox details:', sandboxesToShow.map(s => ({ 
+            name: s.name, 
+            account: s.account, 
+            type: s.type,
+            organizationId: s.organizationId,
+            id: s.id,
+            description: s.description
+        })));
         
         // Populate main container
         if (container) {
@@ -375,18 +587,30 @@ class Dashboard {
         item.className = `sandbox-item ${sandbox.type}`;
         item.style.animationDelay = `${index * 0.1}s`;
 
+        // Get the parent business account color for this sandbox
+        const businessAccountColor = this.getSandboxColor(sandbox);
+        const colorHexMap = {
+            'color-1': '#8B5CF6', // purple
+            'color-2': '#EF4444', // red
+            'color-3': '#10B981', // green
+            'color-4': '#F59E0B', // amber
+            'color-5': '#3B82F6', // blue
+            'color-6': '#EC4899'  // pink
+        };
+        const hexColor = colorHexMap[businessAccountColor] || '#8B5CF6';
+
         // Different display for organization vs account sandboxes
         if (sandbox.type === 'organization') {
             const accountCount = sandbox.accounts ? sandbox.accounts.length : 0;
             item.innerHTML = `
                 <div class="sandbox-header">
-                    <div class="sandbox-icon organization-icon">
+                    <div class="sandbox-icon organization-icon" style="background-color: ${hexColor}20; border: 1px solid ${hexColor}40;">
                         <svg viewBox="0 0 16 16" width="16" height="16">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="#596171"/>
-                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="#596171"/>
-                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="#596171"/>
-                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="#596171"/>
-                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="#596171"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.75C0 1.23122 1.23122 0 2.75 0H8C9.51878 0 10.75 1.23122 10.75 2.75V3C10.75 3.41421 10.4142 3.75 10 3.75C9.58579 3.75 9.25 3.41421 9.25 3V2.75C9.25 2.05964 8.69036 1.5 8 1.5H2.75C2.05964 1.5 1.5 2.05964 1.5 2.75V14.25C1.5 14.3881 1.61193 14.5 1.75 14.5H4.25C4.66421 14.5 5 14.8358 5 15.25C5 15.6642 4.66421 16 4.25 16H1.75C0.783502 16 0 15.2165 0 14.25V2.75ZM10.8525 5.864C11.0957 5.712 11.4043 5.712 11.6475 5.864L15.6475 8.364C15.8668 8.50105 16 8.74141 16 9V14.25C16 15.2165 15.2165 16 14.25 16H8.25C7.2835 16 6.5 15.2165 6.5 14.25V9C6.5 8.74141 6.63321 8.50105 6.8525 8.364L10.8525 5.864ZM8 9.41569V14.25C8 14.3881 8.11193 14.5 8.25 14.5H10.5V13C10.5 12.5858 10.8358 12.25 11.25 12.25C11.6642 12.25 12 12.5858 12 13V14.5H14.25C14.3881 14.5 14.5 14.3881 14.5 14.25V9.41569L11.25 7.38444L8 9.41569Z" fill="${hexColor}"/>
+                            <path d="M3 4.5C3 3.94772 3.44772 3.5 4 3.5C4.55228 3.5 5 3.94772 5 4.5C5 5.05228 4.55228 5.5 4 5.5C3.44772 5.5 3 5.05228 3 4.5Z" fill="${hexColor}"/>
+                            <path d="M3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8C5 8.55228 4.55228 9 4 9C3.44772 9 3 8.55228 3 8Z" fill="${hexColor}"/>
+                            <path d="M6 4.5C6 3.94772 6.44772 3.5 7 3.5C7.55228 3.5 8 3.94772 8 4.5C8 5.05228 7.55228 5.5 7 5.5C6.44772 5.5 6 5.05228 6 4.5Z" fill="${hexColor}"/>
+                            <path d="M3 11.5C3 10.9477 3.44772 10.5 4 10.5C4.55228 10.5 5 10.9477 5 11.5C5 12.0523 4.55228 12.5 4 12.5C3.44772 12.5 3 12.0523 3 11.5Z" fill="${hexColor}"/>
                         </svg>
                     </div>
                     <div class="sandbox-info">
@@ -412,10 +636,10 @@ class Dashboard {
         } else {
             item.innerHTML = `
                 <div class="sandbox-header">
-                    <div class="sandbox-icon account-icon">
+                    <div class="sandbox-icon account-icon" style="background-color: ${hexColor}20; border: 1px solid ${hexColor}40;">
                         <svg viewBox="0 0 24 24" width="16" height="16">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="${hexColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="7" r="4" fill="none" stroke="${hexColor}" stroke-width="2"/>
                         </svg>
                     </div>
                     <div class="sandbox-info">
@@ -437,6 +661,57 @@ class Dashboard {
         return item;
     }
 
+    // Get the color of a business account by name
+    getBusinessAccountColor(accountName) {
+        // Check if this is the current active account
+        const activeAccountElement = document.getElementById('active-account');
+        if (activeAccountElement && activeAccountElement.dataset.accountName === accountName) {
+            return activeAccountElement.dataset.accountColor;
+        }
+        
+        // Check other business accounts in the nav panel
+        const businessAccounts = document.querySelectorAll('.nav-component.business-account');
+        for (const account of businessAccounts) {
+            if (account.dataset.accountName === accountName) {
+                return account.dataset.accountColor;
+            }
+        }
+        
+        // Fallback to a default color
+        return 'color-1';
+    }
+    
+    // Get the main business account color for an organization
+    getOrganizationBusinessAccountColor(organizationId) {
+        // Find the business account that belongs to this organization
+        const businessAccounts = document.querySelectorAll('.nav-component.business-account.organization');
+        for (const account of businessAccounts) {
+            if (account.dataset.organization === organizationId) {
+                return account.dataset.accountColor;
+            }
+        }
+        
+        // Also check if the active account belongs to this organization
+        const activeAccountElement = document.getElementById('active-account');
+        if (activeAccountElement && activeAccountElement.dataset.organization === organizationId) {
+            return activeAccountElement.dataset.accountColor;
+        }
+        
+        // Fallback to a default color
+        return 'color-1';
+    }
+    
+    // Get the appropriate color for a sandbox based on its parent business account
+    getSandboxColor(sandbox) {
+        if (sandbox.type === 'organization') {
+            // For organization sandboxes, use the main business account color for that organization
+            return this.getOrganizationBusinessAccountColor(sandbox.organizationId);
+        } else {
+            // For account sandboxes, use the color of the account they belong to
+            return this.getBusinessAccountColor(sandbox.account);
+        }
+    }
+
     // Create a sandbox item element for the popover
     createSandboxPopoverItem(sandbox, index) {
         const sandboxItem = document.createElement('div');
@@ -447,7 +722,9 @@ class Dashboard {
         
         // Generate initials from sandbox name
         const initials = sandbox.name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
-        const colorClass = sandbox.type === 'organization' ? 'color-1' : `color-${(index % 6) + 1}`;
+        
+        // Use parent business account color instead of generic colors
+        const colorClass = this.getSandboxColor(sandbox);
         
         sandboxItem.innerHTML = `
             <div class="icon">
@@ -534,13 +811,18 @@ class Dashboard {
             return this.createOrganizationSandbox(sandboxName);
         }
 
+        const timestamp = new Date().getTime();
+        const accountSlug = this.createAccountSlug(this.currentActiveAccount);
+        
         const newSandbox = {
-            name: sandboxName,
+            name: `${this.currentActiveAccount} - ${sandboxName}`,
             type: sandboxType,
             organization: null,
             account: this.currentActiveAccount,
             created: new Date().toISOString(),
-            lastUsed: null
+            lastUsed: null,
+            id: `${accountSlug}-custom-${timestamp}`,
+            description: `Custom sandbox for ${this.currentActiveAccount}: ${sandboxName}`
         };
 
         // Add to account sandboxes
@@ -561,20 +843,27 @@ class Dashboard {
         const activeAccountElement = document.getElementById('active-account');
         const organizationId = activeAccountElement ? activeAccountElement.dataset.organization : null;
         
-        if (!organizationId) {
-            console.error('Current account is not part of an organization');
+        if (!organizationId || organizationId === 'undefined') {
+            console.error('🚨 Cannot create organization sandbox: Current account is not part of a valid organization. OrganizationId:', organizationId);
             return;
         }
 
         const orgAccounts = this.organizationAccounts[organizationId] || [];
+        const timestamp = new Date().getTime();
+        
+        // Get organization name for unique sandbox names
+        const orgName = this.getOrganizationDisplayName(organizationId);
+        const orgSlug = this.createOrganizationSlug(organizationId, orgName);
         
         const newOrganizationSandbox = {
-            name: sandboxName,
+            name: `${orgName} - ${sandboxName}`,
             type: 'organization',
             organizationId: organizationId,
             accounts: orgAccounts.map(acc => ({ ...acc })), // Clone accounts
             created: new Date().toISOString(),
-            lastUsed: null
+            lastUsed: null,
+            id: `${orgSlug}-custom-${timestamp}`, // Unique identifier for custom sandboxes
+            description: `Custom organization sandbox for ${orgName} (${orgAccounts.length} accounts): ${sandboxName}`
         };
 
         // Add to organization sandboxes
@@ -762,6 +1051,195 @@ function createSandbox(sandboxName, sandboxType = 'account') {
         return window.dashboard.createSandbox(sandboxName, sandboxType);
     }
 }
+
+// Global debugging function for testing sandbox isolation
+function debugSandboxIsolation() {
+    if (!window.dashboard) {
+        console.error('Dashboard not available');
+        return;
+    }
+    
+    console.log('🔍 === SANDBOX ISOLATION DEBUG ===');
+    
+    const activeAccount = document.getElementById('active-account');
+    const currentAccount = activeAccount ? activeAccount.dataset.accountName : 'Unknown';
+    const currentOrgId = activeAccount ? activeAccount.dataset.organization : 'Unknown';
+    
+    console.log('🔍 Current business account:', currentAccount);
+    console.log('🔍 Current organization ID:', currentOrgId);
+    console.log('🔍 Dashboard.currentActiveAccount:', window.dashboard.currentActiveAccount);
+    
+    // Show all account sandboxes
+    console.log('🔍 All account sandboxes in storage:');
+    Object.keys(window.dashboard.accountSandboxes).forEach(accountName => {
+        const sandboxes = window.dashboard.accountSandboxes[accountName];
+        console.log(`  ${accountName}: ${sandboxes.length} sandboxes`, sandboxes.map(s => ({
+            name: s.name,
+            account: s.account,
+            id: s.id,
+            description: s.description
+        })));
+    });
+    
+    // Show organization sandboxes with issue detection
+    console.log('🔍 All organization sandboxes in storage:');
+    let brokenOrgSandboxes = 0;
+    Object.keys(window.dashboard.organizationSandboxes).forEach(orgId => {
+        const sandboxes = window.dashboard.organizationSandboxes[orgId];
+        const isBroken = !orgId || orgId === 'undefined' || orgId === 'null';
+        const status = isBroken ? '🚨 BROKEN' : '✅ OK';
+        
+        console.log(`  ${orgId} (${status}): ${sandboxes.length} sandboxes`, sandboxes.map(s => ({
+            name: s.name,
+            organizationId: s.organizationId,
+            id: s.id,
+            description: s.description
+        })));
+        
+        if (isBroken) {
+            brokenOrgSandboxes += sandboxes.length;
+        }
+    });
+    
+    if (brokenOrgSandboxes > 0) {
+        console.log(`🚨 Found ${brokenOrgSandboxes} broken organization sandboxes! Run cleanupBrokenOrganizationSandboxes() to fix.`);
+    }
+    
+    // Show what sandboxes would be displayed for current account
+    const currentSandboxes = window.dashboard.getSandboxesForAccount(currentAccount);
+    console.log('🔍 Sandboxes for current account:', currentSandboxes.length, currentSandboxes.map(s => ({
+        name: s.name,
+        account: s.account,
+        description: s.description,
+        id: s.id
+    })));
+    
+    console.log('🔍 === END DEBUG ===');
+}
+
+// Global cleanup function for broken organization sandboxes
+function cleanupBrokenOrganizationSandboxes() {
+    if (!window.dashboard) {
+        console.error('Dashboard not available');
+        return;
+    }
+    return window.dashboard.cleanupBrokenOrganizationSandboxes();
+}
+
+// Global function to upgrade existing sandboxes to new naming system
+function upgradeExistingSandboxes() {
+    if (!window.dashboard) {
+        console.error('Dashboard not available');
+        return;
+    }
+    
+    const activeAccount = document.getElementById('active-account');
+    const accountName = activeAccount ? activeAccount.dataset.accountName : null;
+    
+    if (!accountName) {
+        console.error('No active account found');
+        return;
+    }
+    
+    console.log(`🔄 Upgrading existing sandboxes for: ${accountName}`);
+    
+    const existingSandboxes = window.dashboard.accountSandboxes[accountName] || [];
+    
+    if (existingSandboxes.length === 0) {
+        console.log('No existing sandboxes to upgrade, creating new defaults...');
+        return recreateDefaultSandboxes();
+    }
+    
+    console.log(`Found ${existingSandboxes.length} existing sandboxes to upgrade:`, 
+                existingSandboxes.map(s => s.name));
+    
+    // Clear old sandboxes and create new enhanced ones
+    window.dashboard.accountSandboxes[accountName] = [];
+    
+    // Create new enhanced default sandboxes
+    const newSandboxes = window.dashboard.getDefaultSandboxes(accountName);
+    window.dashboard.accountSandboxes[accountName] = newSandboxes;
+    window.dashboard.saveAccountSandboxes();
+    
+    console.log(`✅ Upgraded to ${newSandboxes.length} enhanced sandboxes:`, 
+                newSandboxes.map(s => s.name));
+    
+    // Refresh the UI
+    window.dashboard.updateSandboxesForAccount(accountName);
+    
+    return newSandboxes;
+}
+
+// Global function to recreate default sandboxes for current account
+function recreateDefaultSandboxes() {
+    if (!window.dashboard) {
+        console.error('Dashboard not available');
+        return;
+    }
+    
+    const activeAccount = document.getElementById('active-account');
+    const accountName = activeAccount ? activeAccount.dataset.accountName : null;
+    
+    if (!accountName) {
+        console.error('No active account found');
+        return;
+    }
+    
+    console.log(`🔄 Recreating default sandboxes for: ${accountName}`);
+    
+    // Clear existing sandboxes for this account
+    window.dashboard.accountSandboxes[accountName] = [];
+    
+    // Force recreation of default sandboxes
+    const newSandboxes = window.dashboard.getDefaultSandboxes(accountName);
+    window.dashboard.accountSandboxes[accountName] = newSandboxes;
+    window.dashboard.saveAccountSandboxes();
+    
+    console.log(`✅ Created ${newSandboxes.length} default sandboxes for ${accountName}:`, 
+                newSandboxes.map(s => s.name));
+    
+    // Refresh the UI
+    window.dashboard.updateSandboxesForAccount(accountName);
+    
+    return newSandboxes;
+}
+
+// Global function to show examples of the new naming system
+function showSandboxNamingExamples() {
+    console.log('🎯 === SANDBOX NAMING EXAMPLES ===');
+    console.log('');
+    console.log('📁 Account Sandbox Examples:');
+    console.log('  ✅ "Acme Corp Development Environment"');
+    console.log('  ✅ "Acme Corp Staging Environment"');
+    console.log('  ✅ "Acme Corp QA Testing"');
+    console.log('  ✅ "Acme Corp - My Custom Feature"');
+    console.log('');
+    console.log('🏢 Organization Sandbox Examples:');
+    console.log('  ✅ "Acme Inc Multi-Account Development"');
+    console.log('  ✅ "Acme Inc Cross-Account Integration"');
+    console.log('  ✅ "Acme Inc Production Rollout"');
+    console.log('  ✅ "Acme Inc Security & Compliance"');
+    console.log('  ✅ "Acme Inc - Company-wide Testing"');
+    console.log('');
+    console.log('🔧 Unique ID Examples:');
+    console.log('  ✅ "acme-corp-dev-1721421234567"');
+    console.log('  ✅ "acme-inc-integration-1721421234567"');
+    console.log('  ✅ "beta-inc-custom-1721421234567"');
+    console.log('');
+    console.log('❌ Old Generic Names (FIXED):');
+    console.log('  ❌ "Q3 Planning" → "Acme Inc Multi-Account Development"');
+    console.log('  ❌ "Development" → "Acme Corp Development Environment"');
+    console.log('  ❌ "Testing" → "Acme Corp QA Testing"');
+    console.log('');
+    console.log('🎯 === END EXAMPLES ===');
+}
+
+// Make debugging functions globally available
+window.debugSandboxIsolation = debugSandboxIsolation;
+window.cleanupBrokenOrganizationSandboxes = cleanupBrokenOrganizationSandboxes;
+window.showSandboxNamingExamples = showSandboxNamingExamples;
+window.recreateDefaultSandboxes = recreateDefaultSandboxes;
+window.upgradeExistingSandboxes = upgradeExistingSandboxes;
 
 function deleteSandbox(sandboxName) {
     if (window.dashboard) {
