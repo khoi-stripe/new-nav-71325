@@ -1780,18 +1780,39 @@
         // Handle main-content clicks - collapse accountPanel if it's open
         document.querySelector('.main-content').addEventListener('click', function(e) {
             const accountPanel = document.getElementById('accountPanel');
+            const navPanel = document.getElementById('navPanel');
+            const dashboard = document.querySelector('.dashboard');
+            const expandButton = document.querySelector('.expandButton-container');
             
             if (window.innerWidth <= 768) {
                 if (accountPanel.classList.contains('mobile-open')) {
                     accountPanel.classList.remove('mobile-open');
-                    // Reset restoration state when account panel is closed by clicking main content
-                    previousNavPanelState = false;
+                    dashboard.classList.remove('account-panel-expanded');
+                    
+                    // If nav panel was previously open, restore it
+                    if (previousNavPanelState) {
+                        navPanel.classList.add('mobile-open');
+                        dashboard.classList.add('nav-panel-expanded');
+                        expandButton.setAttribute('data-tooltip', 'Collapse');
+                        previousNavPanelState = false;
+                    } else {
+                        expandButton.setAttribute('data-tooltip', 'Expand');
+                    }
                 }
             } else {
                 if (accountPanel.classList.contains('expanded')) {
                     accountPanel.classList.remove('expanded');
-                    // Reset restoration state when account panel is closed by clicking main content
-                    previousNavPanelState = false;
+                    dashboard.classList.remove('account-panel-expanded');
+                    
+                    // If nav panel was previously expanded, restore it
+                    if (previousNavPanelState) {
+                        navPanel.classList.add('expanded');
+                        dashboard.classList.add('nav-panel-expanded');
+                        expandButton.setAttribute('data-tooltip', 'Collapse');
+                        previousNavPanelState = false;
+                    } else {
+                        expandButton.setAttribute('data-tooltip', 'Expand');
+                    }
                 }
             }
         });
@@ -2567,13 +2588,11 @@
                  }
              }
              
-             // Update sandbox popover buttons and sandboxes for the new account
+             // Update sandbox popover buttons for the new account
              updateSandboxPopoverButtons();
              
-             // Update sandboxes for the new account
-             if (window.dashboard) {
-                 window.dashboard.updateSandboxesForAccount(newActiveData.name);
-             }
+             // Note: Sandbox updates are handled automatically by the MutationObserver
+             // when the data-account-name attribute changes above. No manual call needed here.
         }
 
         // Update active account function with position swapping

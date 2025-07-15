@@ -22,9 +22,13 @@
         <p>To test sandbox isolation:</p>
         <ol>
             <li>Open the main dashboard.html in another tab</li>
+            <li>Open browser console (F12) to see detailed isolation logs</li>
             <li>Switch between different business accounts (e.g., Acme Corp → Beta Inc)</li>
+            <li>Watch console for "SANDBOX ISOLATION VALIDATION" messages</li>
             <li>Check that each business account has distinct sandboxes</li>
-            <li>Use the debugging functions below to inspect sandbox storage</li>
+            <li>Use debugging functions below or call <code>debugSandboxIsolation()</code> in console</li>
+            <li>If you see old sandbox names (e.g., "Development" instead of "Development Environment"), click <strong>"⬆️ Upgrade Old Sandboxes"</strong></li>
+            <li>Verify no "🚨 ISOLATION BROKEN" errors appear in console</li>
         </ol>
     </div>
     
@@ -33,16 +37,25 @@
         <button onclick="debugSandboxes()">Debug Sandbox Storage</button>
         <button onclick="clearSandboxes()">Clear All Sandboxes</button>
         <button onclick="testSandboxIsolation()">Test Sandbox Isolation</button>
+        <button onclick="window.debugSandboxIsolation ? window.debugSandboxIsolation() : alert('Open dashboard.html first')">Enhanced Debug (Requires Dashboard)</button>
+        <button onclick="window.cleanupBrokenOrganizationSandboxes ? window.cleanupBrokenOrganizationSandboxes() : alert('Open dashboard.html first')" style="background-color: #ff6b6b; color: white;">🧹 Fix Broken Org Sandboxes</button>
+        <button onclick="window.upgradeExistingSandboxes ? window.upgradeExistingSandboxes() : alert('Open dashboard.html first')" style="background-color: #FF9800; color: white;">⬆️ Upgrade Old Sandboxes</button>
+        <button onclick="window.recreateDefaultSandboxes ? window.recreateDefaultSandboxes() : alert('Open dashboard.html first')" style="background-color: #2196F3; color: white;">🔄 Recreate Default Sandboxes</button>
+        <button onclick="window.showSandboxNamingExamples ? window.showSandboxNamingExamples() : alert('Open dashboard.html first')" style="background-color: #4CAF50; color: white;">🎯 Show Naming Examples</button>
         <div id="debug-output" class="results"></div>
     </div>
     
     <div class="test-section">
         <h2>Expected Behavior</h2>
         <ul>
-            <li>Each business account should have its own unique set of sandboxes</li>
-            <li>Switching business accounts should show different sandboxes</li>
-            <li>Sandboxes should be stored with unique account keys in localStorage</li>
-            <li>Default sandboxes should have unique IDs and account references</li>
+            <li><strong>Business Account Isolation:</strong> Each business account should have its own unique set of sandboxes</li>
+            <li><strong>Account-Specific Naming:</strong> Account sandboxes should have names like "Acme Corp Development Environment", "Beta Inc Staging Environment"</li>
+            <li><strong>Organization Sandbox Uniqueness:</strong> Organization sandboxes should be unique per organization with distinct names like "Acme Inc Multi-Account Development" vs "Beta Corp Multi-Account Development"</li>
+            <li><strong>Custom Sandbox Prefixing:</strong> User-created sandboxes should include account/organization prefix (e.g., "Acme Corp - My Custom Sandbox")</li>
+            <li><strong>Account Switching:</strong> Switching business accounts should show completely different sandboxes</li>
+            <li><strong>Unique Identifiers:</strong> All sandboxes should have unique IDs, clean slugs, and descriptive information</li>
+            <li><strong>No Broken Data:</strong> No organization sandboxes with "undefined" organizationId should exist</li>
+            <li><strong>Automatic Cleanup:</strong> System should automatically detect and fix broken organization sandboxes</li>
         </ul>
     </div>
     
